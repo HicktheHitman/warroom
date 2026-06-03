@@ -1,0 +1,99 @@
+/* css/base.css — WARROOM design system */
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* ── Brand colors ── */
+  --gold:           #C9A84C;
+  --gold-bright:    #F0C060;
+  --gold-dim:       #8B6914;
+  --gold-bg:        rgba(201, 168, 76, 0.08);
+  --gold-border:    rgba(201, 168, 76, 0.25);
+
+  --olive:          #4A5E2F;
+  --olive-bright:   #6B8A3E;
+  --olive-glow:     #8FAF52;
+  --olive-bg:       rgba(107, 138, 62, 0.12);
+
+  --red:            #CC2222;
+  --red-bright:     #FF3333;
+  --red-bg:         rgba(204, 34, 34, 0.1);
+  --red-border:     rgba(204, 34, 34, 0.4);
+
+  /* ── Backgrounds ── */
+  --navy:           #080C14;
+  --navy-mid:       #0D1420;
+  --navy-surface:   #101828;
+  --navy-card:      #0F1928;
+  --navy-border:    #1E2D4A;
+  --navy-border-dim:rgba(30, 45, 74, 0.5);
+
+  /* ── Text ── */
+  --bone:           #E8E0D0;
+  --bone-muted:     #A89E8A;
+  --bone-dim:       #6B6257;
+
+  /* ── Typography ── */
+  --font-mil:   'Orbitron', monospace;
+  --font-mono:  'Share Tech Mono', monospace;
+  --font-body:  'Barlow Condensed', sans-serif;
+
+  /* ── Layout ── */
+  --topbar-height: 48px;
+  --max-width:     1100px;
+  --radius-sm:     2px;
+  --radius-md:     4px;
+}
+
+html, body {
+  background: var(--navy);
+  color: var(--bone);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { color: var(--gold-bright); }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--navy-mid); }
+::-webkit-scrollbar-thumb { background: var(--navy-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+/* ── Utility ── */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); border: 0;
+}
+.hidden { display: none !important; }
+.text-gold    { color: var(--gold); }
+.text-olive   { color: var(--olive-glow); }
+.text-red     { color: var(--red-bright); }
+.text-muted   { color: var(--bone-muted); }
+.text-dim     { color: var(--bone-dim); }
+.text-mono    { font-family: var(--font-mono); }
+.text-mil     { font-family: var(--font-mil); }
+
+/* ── Scan line animation (login bg) ── */
+@keyframes scan {
+  0%   { top: -2px; }
+  100% { top: 100%; }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in { animation: fadeIn 0.3s ease forwards; }
+.blink       { animation: blink 1.2s step-end infinite; }

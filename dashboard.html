@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CALLSIGN: WARROOM — Intel Hub</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/layout.css">
+</head>
+<body>
+
+<!-- ── Topbar ────────────────────────────────────────── -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-name">WARROOM</div>
+    <div class="topbar-logo-sub">MW4 INTEL HUB</div>
+  </div>
+
+  <nav class="topbar-nav" role="navigation" aria-label="Main navigation">
+    <button class="nav-tab active" data-page="intel"     onclick="navTo('intel', this)">INTEL FEED</button>
+    <button class="nav-tab"        data-page="leaks"     onclick="navTo('leaks', this)">LEAK TRACKER</button>
+    <button class="nav-tab"        data-page="weapons"   onclick="navTo('weapons', this)">WEAPONS DB</button>
+    <button class="nav-tab"        data-page="reports"   onclick="navTo('reports', this)">FIELD REPORTS</button>
+    <button class="nav-tab"        data-page="fragcast"  onclick="navTo('fragcast', this)">FRAGCAST</button>
+    <button class="nav-tab"        data-page="dossier"   onclick="navTo('dossier', this)" id="nav-dossier">DOSSIER</button>
+  </nav>
+
+  <div class="topbar-right">
+    <span class="callsign-badge" id="topbar-callsign">...</span>
+    <button class="btn btn-ghost" onclick="handleSignOut()">GO DARK</button>
+  </div>
+</header>
+
+<!-- ── Main content ──────────────────────────────────── -->
+<main class="app-main" id="app-main">
+
+  <!-- INTEL FEED PAGE -->
+  <div class="page active" id="page-intel">
+    <div id="intel-content">
+      <!-- Populated by intel.js -->
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
+                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
+        LOADING INTEL...
+      </div>
+    </div>
+  </div>
+
+  <!-- LEAK TRACKER PAGE -->
+  <div class="page" id="page-leaks">
+    <div id="leaks-content">
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
+                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
+        LOADING LEAK TRACKER...
+      </div>
+    </div>
+  </div>
+
+  <!-- WEAPONS DB PAGE -->
+  <div class="page" id="page-weapons">
+    <div id="weapons-content">
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
+                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
+        LOADING WEAPONS DATABASE...
+      </div>
+    </div>
+  </div>
+
+  <!-- FIELD REPORTS PAGE -->
+  <div class="page" id="page-reports">
+    <div id="reports-content">
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
+                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
+        LOADING FIELD REPORTS...
+      </div>
+    </div>
+  </div>
+
+  <!-- FRAGCAST PAGE -->
+  <div class="page" id="page-fragcast">
+    <div id="fragcast-content">
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
+                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
+        LOADING FRAGCAST...
+      </div>
+    </div>
+  </div>
+
+  <!-- DOSSIER PAGE -->
+  <div class="page" id="page-dossier">
+    <div id="dossier-content">
+      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
+                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
+        LOADING DOSSIER...
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase strip (shown on all pages) -->
+  <div class="phase-strip">
+    <span class="phase-badge phase-active">PHASE 01 — PRE-LAUNCH</span>
+    <span class="phase-badge phase-locked">PHASE 02 — LAUNCH WEEK [LOCKED]</span>
+    <span class="phase-badge phase-locked">PHASE 03 — LIVE GAME [LOCKED]</span>
+  </div>
+
+</main>
+
+<!-- Toast container -->
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- Scripts — load order matters -->
+<script src="js/config.js"></script>
+<script src="js/xhr.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/countdown.js"></script>
+<script src="js/intel.js"></script>
+<script src="js/leaks.js"></script>
+<script src="js/votes.js"></script>
+<script src="js/feed.js"></script>
+<script src="js/fragcast.js"></script>
+
+<script>
+  // ── Boot sequence ──────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', async function () {
+
+    // Handle Google OAuth callback tokens in URL hash
+    handleOAuthCallback();
+
+    // Redirect to login if not authenticated
+    if (!requireAuth()) return;
+
+    // Load current user profile and set callsign in topbar
+    const user = await fetchCurrentUser();
+    if (user) {
+      document.getElementById('topbar-callsign').textContent = user.callsign;
+      // Show admin link in nav if applicable
+      if (user.role === 'admin' || user.role === 'command') {
+        const adminLink = document.createElement('a');
+        adminLink.href = '/admin/';
+        adminLink.className = 'nav-tab';
+        adminLink.style.color = 'var(--gold)';
+        adminLink.textContent = 'COMMAND';
+        document.querySelector('.topbar-nav').appendChild(adminLink);
+      }
+    }
+
+    // Load the default page (intel feed)
+    loadPage('intel');
+  });
+
+  // ── Page router ───────────────────────────────────────
+  let currentPage = 'intel';
+
+  function navTo(pageId, tabEl) {
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    if (tabEl) tabEl.classList.add('active');
+
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + pageId).classList.add('active');
+
+    currentPage = pageId;
+    loadPage(pageId);
+  }
+
+  function loadPage(pageId) {
+    switch (pageId) {
+      case 'intel':    loadIntelPage();    break;
+      case 'leaks':    loadLeaksPage();    break;
+      case 'weapons':  loadWeaponsPage();  break;
+      case 'reports':  loadReportsPage();  break;
+      case 'fragcast': loadFragcastPage(); break;
+      case 'dossier':  loadDossierPage();  break;
+    }
+  }
+</script>
+
+</body>
+</html>

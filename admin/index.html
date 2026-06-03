@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WARROOM — COMMAND</title>
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/layout.css">
+</head>
+<body>
+<div style="padding:2rem;font-family:var(--font-mil);color:var(--gold);letter-spacing:2px;font-size:14px;">
+  COMMAND PANEL — BUILT IN STEP 3
+</div>
+<script src="../js/config.js"></script>
+<script src="../js/xhr.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    if (!requireAuth()) return;
+  });
+</script>
+</body>
+</html>
