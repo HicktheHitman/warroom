@@ -172,14 +172,14 @@ function renderFragcastSidebar() {
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
                   letter-spacing:2px;margin-bottom:8px;">FIND US ON</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
-        <a href="#" class="fragcast-platform-btn">
+        <a href="https://open.spotify.com/show/033oBK5NtVayQl7ZdG2kq6" target="_blank" rel="noopener" class="fragcast-platform-btn">
           <span>🎙</span> SPOTIFY
         </a>
-        <a href="#" class="fragcast-platform-btn">
+        <a href="https://podcasts.apple.com/us/podcast/fragcast/id1896836000" target="_blank" rel="noopener" class="fragcast-platform-btn">
           <span>🎵</span> APPLE PODCASTS
         </a>
-        <a href="#" class="fragcast-platform-btn">
-          <span>▶</span> YOUTUBE
+        <a href="#" class="fragcast-platform-btn" style="opacity:0.4;cursor:not-allowed;">
+          <span>▶</span> YOUTUBE — COMING SOON
         </a>
       </div>
     </div>
