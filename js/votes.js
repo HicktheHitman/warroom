@@ -4,6 +4,20 @@
 // Community votes on which weapons will appear in MW4
 // ─────────────────────────────────────────────────────────
 
+
+// ── Weapon category icons (SVG silhouettes) ───────────────
+
+const WEAPON_ICONS = {
+  'AR':      `<svg width="32" height="16" viewBox="0 0 32 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="22" height="4" rx="1" fill="currentColor"/><rect x="23" y="5" width="8" height="2" rx="0.5" fill="currentColor"/><rect x="5" y="4" width="3" height="2" fill="currentColor"/><rect x="8" y="10" width="4" height="3" rx="0.5" fill="currentColor"/><rect x="1" y="6" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.6"/></svg>`,
+  'SMG':     `<svg width="28" height="16" viewBox="0 0 28 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="18" height="4" rx="1" fill="currentColor"/><rect x="19" y="6" width="7" height="2" rx="0.5" fill="currentColor"/><rect x="7" y="10" width="3" height="3" rx="0.5" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="currentColor"/></svg>`,
+  'LMG':     `<svg width="36" height="16" viewBox="0 0 36 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="26" height="4" rx="1" fill="currentColor"/><rect x="27" y="5" width="8" height="2" rx="0.5" fill="currentColor"/><rect x="4" y="10" width="5" height="4" rx="0.5" fill="currentColor"/><circle cx="8" cy="10" r="2" fill="currentColor" opacity="0.5"/><rect x="6" y="3" width="2" height="3" fill="currentColor"/></svg>`,
+  'Sniper':  `<svg width="40" height="12" viewBox="0 0 40 12" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="5" width="32" height="3" rx="0.5" fill="currentColor"/><rect x="33" y="5" width="6" height="1.5" rx="0.5" fill="currentColor"/><rect x="10" y="2" width="2" height="8" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="6" y="8" width="4" height="3" rx="0.5" fill="currentColor"/></svg>`,
+  'Shotgun': `<svg width="30" height="16" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="20" height="4" rx="1" fill="currentColor"/><rect x="21" y="6" width="8" height="3" rx="0.5" fill="currentColor"/><rect x="21" y="5" width="8" height="1" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="6" y="10" width="5" height="4" rx="0.5" fill="currentColor"/></svg>`,
+  'Pistol':  `<svg width="22" height="18" viewBox="0 0 22 18" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="14" height="5" rx="1" fill="currentColor"/><rect x="15" y="7" width="6" height="2" rx="0.5" fill="currentColor"/><rect x="3" y="11" width="5" height="6" rx="1" fill="currentColor"/><rect x="5" y="4" width="2" height="2" fill="currentColor"/></svg>`,
+  'Launcher':`<svg width="34" height="14" viewBox="0 0 34 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="5" width="24" height="5" rx="2" fill="currentColor"/><circle cx="28" cy="7" r="5" fill="currentColor" opacity="0.3"/><circle cx="28" cy="7" r="3" fill="currentColor" opacity="0.5"/><rect x="8" y="10" width="6" height="3" rx="0.5" fill="currentColor"/></svg>`,
+  'Melee':   `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="2" width="3" height="14" rx="1" fill="currentColor"/><rect x="10" y="1" width="5" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="10" y="16" width="5" height="7" rx="1" fill="currentColor" opacity="0.5"/></svg>`
+};
+
 async function loadWeaponsPage() {
   const container = document.getElementById('weapons-content');
 
@@ -121,6 +135,8 @@ function renderWeapons(weapons) {
             <!-- Weapon info -->
             <div style="flex:1;min-width:0;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                <span style="color:var(--gold-dim);display:inline-flex;align-items:center;
+                             margin-right:4px;">${WEAPON_ICONS[w.category] || ''}</span>
                 <span style="font-family:var(--font-body);font-size:14px;font-weight:600;
                              color:var(--bone);">${escHtml(w.name)}</span>
                 ${typeBadge}
