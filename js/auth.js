@@ -194,14 +194,25 @@ async function fetchCurrentUser() {
   const cached = getCachedProfile();
   if (cached) return cached;
 
-  const { data, error } = await xhrGet(
-    'profiles', 'select=*&limit=1',
-    { 'Authorization': `Bearer ${session.access_token}` }
-  );
-
-  if (error || !data || !data.length) return null;
-  saveProfile(data[0]);
-  return data[0];
+  try {
+    const res = await fetch(
+      `${API_BASE}/profiles?select=*&limit=1`,
+      {
+        headers: {
+          'apikey': WARROOM_CONFIG.supabaseAnonKey,
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !data.length) return null;
+    saveProfile(data[0]);
+    return data[0];
+  } catch (e) {
+    return null;
+  }
 }
 
 // Bust the profile cache (call after profile updates)
