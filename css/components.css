@@ -452,3 +452,41 @@ textarea.mil-input {
   letter-spacing: 0.5px;
   margin-top: 3px;
 }
+
+/* ══════════════════════════════════════════
+   LEAK TRACKER
+══════════════════════════════════════════ */
+
+.filter-btn {
+  background: transparent;
+  border: 1px solid var(--navy-border);
+  color: var(--bone-dim);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+.filter-btn.active {
+  background: var(--gold-bg);
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.vote-btn-sm {
+  background: transparent;
+  border: 1px solid var(--navy-border);
+  color: var(--bone-dim);
+  font-size: 11px;
+  width: 28px;
+  height: 24px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.vote-btn-sm:hover { border-color: var(--gold); color: var(--gold); }
