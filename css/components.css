@@ -490,3 +490,26 @@ textarea.mil-input {
   padding: 0;
 }
 .vote-btn-sm:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ══════════════════════════════════════════
+   FRAGCAST
+══════════════════════════════════════════ */
+
+.fragcast-platform-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--navy);
+  border: 1px solid var(--navy-border);
+  color: var(--bone-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+.fragcast-platform-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
