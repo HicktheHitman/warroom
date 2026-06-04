@@ -2,22 +2,230 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>WARROOM — COMMAND</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WARROOM — COMMAND PANEL</title>
   <link rel="stylesheet" href="../css/base.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/layout.css">
 </head>
 <body>
-<div style="padding:2rem;font-family:var(--font-mil);color:var(--gold);letter-spacing:2px;font-size:14px;">
-  COMMAND PANEL — BUILT IN STEP 3
-</div>
+
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-name" style="color:var(--red);">COMMAND</div>
+    <div class="topbar-logo-sub">WARROOM ADMIN</div>
+  </div>
+  <div class="topbar-right">
+    <a href="/dashboard.html" class="btn btn-ghost">← BACK TO WARROOM</a>
+    <span class="callsign-badge" id="admin-callsign">...</span>
+    <button class="btn btn-ghost" onclick="handleSignOut()">GO DARK</button>
+  </div>
+</header>
+
+<main class="app-main">
+
+  <!-- Post Intel -->
+  <div class="card card-top" style="margin-bottom:1rem;">
+    <div class="card-header">
+      <div class="card-title">POST INTEL</div>
+      <div class="dot dot-gold"></div>
+    </div>
+
+    <div class="error-msg" id="post-error"></div>
+    <div id="post-success" style="display:none;font-family:var(--font-mono);font-size:10px;
+         color:var(--olive-glow);letter-spacing:1px;margin-bottom:10px;padding:6px 8px;
+         background:var(--olive-bg);border:1px solid var(--olive);"></div>
+
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="intel-title">INTEL TITLE</label>
+        <input class="mil-input" type="text" id="intel-title"
+               placeholder="E.G. KOREAN PENINSULA CAMPAIGN CONFIRMED">
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="intel-status">STATUS</label>
+        <select class="mil-input" id="intel-status"
+                style="cursor:pointer;background:var(--navy);">
+          <option value="confirmed">CONFIRMED INTEL (GOLD)</option>
+          <option value="urgent">URGENT INTEL (RED ALERT)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="intel-body">BODY (OPTIONAL)</label>
+      <textarea class="mil-input" id="intel-body" rows="3"
+                placeholder="Additional details about this intel..."></textarea>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="intel-source-name">SOURCE NAME</label>
+        <input class="mil-input" type="text" id="intel-source-name"
+               placeholder="E.G. ACTIVISION.COM">
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="intel-source-url">SOURCE URL (OPTIONAL)</label>
+        <input class="mil-input" type="url" id="intel-source-url"
+               placeholder="https://...">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="btn-post-intel" onclick="postIntel()">
+      TRANSMIT INTEL
+    </button>
+  </div>
+
+  <!-- Intel list -->
+  <div class="card card-top">
+    <div class="card-header">
+      <div class="card-title">POSTED INTEL</div>
+      <button class="btn btn-ghost" onclick="loadPostedIntel()" style="font-size:9px;">
+        REFRESH
+      </button>
+    </div>
+    <div id="posted-intel-list">
+      <div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>
+    </div>
+  </div>
+
+</main>
+
+<div id="toast-container" aria-live="polite"></div>
+
 <script src="../js/config.js"></script>
 <script src="../js/xhr.js"></script>
 <script src="../js/auth.js"></script>
+
 <script>
-  window.addEventListener('DOMContentLoaded', function() {
+  window.addEventListener('DOMContentLoaded', async function () {
     if (!requireAuth()) return;
+
+    const user = await fetchCurrentUser();
+    if (!user || (user.role !== 'admin' && user.role !== 'command')) {
+      document.querySelector('.app-main').innerHTML = `
+        <div class="card card-top-red" style="max-width:400px;margin:2rem auto;text-align:center;">
+          <div style="font-family:var(--font-mil);font-size:12px;color:var(--red);
+                      letter-spacing:2px;padding:1rem;">ACCESS DENIED</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+                      padding-bottom:1rem;">COMMAND CLEARANCE REQUIRED</div>
+          <a href="/dashboard.html" class="btn btn-secondary">BACK TO WARROOM</a>
+        </div>`;
+      return;
+    }
+
+    document.getElementById('admin-callsign').textContent = user.callsign;
+    loadPostedIntel();
   });
+
+  async function postIntel() {
+    const title      = document.getElementById('intel-title').value.trim();
+    const status     = document.getElementById('intel-status').value;
+    const body       = document.getElementById('intel-body').value.trim();
+    const sourceName = document.getElementById('intel-source-name').value.trim();
+    const sourceUrl  = document.getElementById('intel-source-url').value.trim();
+    const errEl      = document.getElementById('post-error');
+    const sucEl      = document.getElementById('post-success');
+    const btn        = document.getElementById('btn-post-intel');
+
+    errEl.classList.remove('visible');
+    sucEl.style.display = 'none';
+
+    if (!title) {
+      errEl.textContent = 'INTEL TITLE IS REQUIRED';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    const profile = getCachedProfile();
+    setButtonLoading(btn, 'TRANSMITTING...');
+
+    const { data, error } = await xhrPost('intel_posts', {
+      title,
+      status,
+      body:        body || null,
+      source_name: sourceName || null,
+      source_url:  sourceUrl  || null,
+      posted_by:   profile?.id || null
+    });
+
+    resetButton(btn, 'TRANSMIT INTEL');
+
+    if (error) {
+      errEl.textContent = 'FAILED TO POST: ' + error;
+      errEl.classList.add('visible');
+      return;
+    }
+
+    // Clear form
+    document.getElementById('intel-title').value = '';
+    document.getElementById('intel-body').value = '';
+    document.getElementById('intel-source-name').value = '';
+    document.getElementById('intel-source-url').value = '';
+
+    sucEl.textContent = `INTEL TRANSMITTED: "${title}"`;
+    sucEl.style.display = 'block';
+
+    loadPostedIntel();
+    showToast('INTEL POSTED SUCCESSFULLY', 'success');
+  }
+
+  async function loadPostedIntel() {
+    const container = document.getElementById('posted-intel-list');
+    container.innerHTML = '<div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>';
+
+    const { data, error } = await xhrGet('intel_posts', 'select=*&order=created_at.desc');
+
+    if (error || !data || !data.length) {
+      container.innerHTML = `<div style="font-family:var(--font-mono);font-size:10px;
+        color:var(--bone-dim);padding:1rem;text-align:center;letter-spacing:1px;">
+        NO INTEL POSTED YET</div>`;
+      return;
+    }
+
+    container.innerHTML = data.map(p => {
+      const date = new Date(p.created_at).toLocaleDateString('en-US', {
+        year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+      });
+      const badgeClass = p.status === 'urgent' ? 'badge-urgent' : 'badge-confirmed';
+      return `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                    gap:12px;padding:10px 0;border-bottom:1px solid var(--navy-border-dim);">
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+              <span class="badge ${badgeClass}">${p.status.toUpperCase()}</span>
+              <span style="font-family:var(--font-body);font-size:13px;font-weight:600;
+                           color:var(--bone);">${escHtml(p.title)}</span>
+            </div>
+            ${p.body ? `<div style="font-family:var(--font-body);font-size:12px;
+              color:var(--bone-muted);margin-bottom:3px;">${escHtml(p.body)}</div>` : ''}
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);">
+              ${p.source_name ? escHtml(p.source_name).toUpperCase() + ' — ' : ''}
+              ${date.toUpperCase()}
+            </div>
+          </div>
+          <button class="btn btn-danger" style="padding:4px 10px;font-size:8px;flex-shrink:0;"
+                  onclick="deleteIntel('${p.id}')">
+            DELETE
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  async function deleteIntel(id) {
+    if (!confirm('DELETE THIS INTEL POST?')) return;
+    const { error } = await xhrDelete('intel_posts', `id=eq.${id}`);
+    if (error) { showToast('DELETE FAILED', 'error'); return; }
+    showToast('INTEL DELETED', 'default');
+    loadPostedIntel();
+  }
+
+  function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+              .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
 </script>
+
 </body>
 </html>
