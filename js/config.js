@@ -6,8 +6,8 @@
 // ─────────────────────────────────────────────────────────
 
 const WARROOM_CONFIG = {
-  supabaseUrl: 'https://yrsjnufuecswkfybdwvk.supabase.co',       // e.g. https://abcdefgh.supabase.co
-  supabaseAnonKey: 'sb_publishable_dFYKflaHPMu_RZbf8DpWKA_plitAD-H'
+  supabaseUrl: 'YOUR_SUPABASE_URL',       // e.g. https://abcdefgh.supabase.co
+  supabaseAnonKey: 'YOUR_SUPABASE_ANON_KEY'
 };
 
 // REST API base — all XHR calls hit this

@@ -1,11 +1,10 @@
 // js/auth.js
 // ─────────────────────────────────────────────────────────
-// WARROOM — Auth module
-// Handles: sign in, sign up, Google OAuth, session storage, sign out
-// All calls use XHR via Supabase REST auth endpoints.
+// WARROOM — Auth module (Step 2 — fully wired)
 // ─────────────────────────────────────────────────────────
 
 const SESSION_KEY = 'warroom_session';
+const PROFILE_KEY = 'warroom_profile';
 
 // ── Session helpers ──────────────────────────────────────
 
@@ -13,9 +12,7 @@ function getSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
     return raw ? JSON.parse(raw) : null;
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
 
 function saveSession(session) {
@@ -24,16 +21,29 @@ function saveSession(session) {
 
 function clearSession() {
   localStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(PROFILE_KEY);
 }
 
-function getCurrentUser() {
-  const session = getSession();
-  return session ? session.user : null;
+function getCachedProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function saveProfile(profile) {
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
 }
 
 function requireAuth() {
   const session = getSession();
   if (!session || !session.access_token) {
+    window.location.href = '/index.html';
+    return false;
+  }
+  // Check token expiry
+  if (session.expires_at && Date.now() / 1000 > session.expires_at) {
+    clearSession();
     window.location.href = '/index.html';
     return false;
   }
@@ -49,29 +59,28 @@ async function handleSignIn() {
   const btn      = document.getElementById('btn-signin');
 
   errEl.classList.remove('visible');
-
   if (!email || !password) {
-    showError(errEl, 'CALLSIGN/EMAIL AND AUTHORIZATION CODE REQUIRED');
+    showAuthError(errEl, 'EMAIL AND AUTHORIZATION CODE REQUIRED');
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = 'AUTHENTICATING...';
+  setButtonLoading(btn, 'AUTHENTICATING...');
 
-  const { data, error } = await xhrRequest('POST', `${AUTH_BASE}/token?grant_type=password`, {
-    email,
-    password
-  });
+  const { data, error } = await xhrRequest('POST',
+    `${AUTH_BASE}/token?grant_type=password`, { email, password });
 
-  btn.disabled = false;
-  btn.textContent = 'AUTHENTICATE';
+  resetButton(btn, 'AUTHENTICATE');
 
   if (error || !data || !data.access_token) {
-    const msg = (data && data.error_description) ? data.error_description.toUpperCase() : 'AUTHENTICATION FAILED';
-    showError(errEl, msg);
+    const msg = (data && data.error_description)
+      ? data.error_description.toUpperCase()
+      : 'AUTHENTICATION FAILED — CHECK YOUR CREDENTIALS';
+    showAuthError(errEl, msg);
     return;
   }
 
+  // Store expiry timestamp
+  data.expires_at = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
   saveSession(data);
   window.location.href = '/dashboard.html';
 }
@@ -87,54 +96,59 @@ async function handleSignUp() {
 
   errEl.classList.remove('visible');
 
-  // Validate callsign
-  if (!callsign) {
-    showError(errEl, 'CALLSIGN IS REQUIRED'); return;
-  }
+  // Validate
+  if (!callsign) { showAuthError(errEl, 'CALLSIGN IS REQUIRED'); return; }
   if (!/^[A-Za-z0-9_\-]+$/.test(callsign)) {
-    showError(errEl, 'CALLSIGN: LETTERS, NUMBERS, _ AND - ONLY'); return;
+    showAuthError(errEl, 'CALLSIGN: LETTERS, NUMBERS, _ AND - ONLY'); return;
   }
   if (callsign.length < 3) {
-    showError(errEl, 'CALLSIGN MUST BE AT LEAST 3 CHARACTERS'); return;
+    showAuthError(errEl, 'CALLSIGN MUST BE AT LEAST 3 CHARACTERS'); return;
   }
-  if (!email) {
-    showError(errEl, 'EMAIL IS REQUIRED'); return;
+  if (callsign.length > 24) {
+    showAuthError(errEl, 'CALLSIGN MUST BE 24 CHARACTERS OR LESS'); return;
   }
+  if (!email) { showAuthError(errEl, 'EMAIL IS REQUIRED'); return; }
   if (!password || password.length < 8) {
-    showError(errEl, 'AUTHORIZATION CODE MUST BE AT LEAST 8 CHARACTERS'); return;
+    showAuthError(errEl, 'AUTHORIZATION CODE MUST BE AT LEAST 8 CHARACTERS'); return;
   }
 
-  btn.disabled = true;
-  btn.textContent = 'REQUESTING CLEARANCE...';
+  setButtonLoading(btn, 'REQUESTING CLEARANCE...');
+
+  // Check callsign availability first
+  const { data: existing } = await xhrGet(
+    'profiles', `select=id&callsign=eq.${encodeURIComponent(callsign)}`
+  );
+  if (existing && existing.length > 0) {
+    resetButton(btn, 'REQUEST CLEARANCE');
+    showAuthError(errEl, `CALLSIGN "${callsign}" IS ALREADY TAKEN`);
+    return;
+  }
 
   const { data, error } = await xhrRequest('POST', `${AUTH_BASE}/signup`, {
     email,
     password,
-    data: { callsign }   // stored in raw_user_meta_data, used by the DB trigger
+    data: { callsign }
   });
 
-  btn.disabled = false;
-  btn.textContent = 'REQUEST CLEARANCE';
+  resetButton(btn, 'REQUEST CLEARANCE');
 
   if (error || !data || data.error) {
     const msg = (data && data.msg) ? data.msg.toUpperCase()
               : (data && data.error_description) ? data.error_description.toUpperCase()
               : 'SIGNUP FAILED — TRY AGAIN';
-    showError(errEl, msg);
+    showAuthError(errEl, msg);
     return;
   }
 
-  // Show confirmation message
-  document.getElementById('form-signup').classList.add('hidden');
-  document.getElementById('form-confirm').classList.remove('hidden');
+  // Show confirmation screen
+  showForm('confirm');
 }
 
 // ── Google OAuth ─────────────────────────────────────────
 
 function handleGoogleAuth() {
   const redirectTo = encodeURIComponent(window.location.origin + '/dashboard.html');
-  const url = `${AUTH_BASE}/authorize?provider=google&redirect_to=${redirectTo}`;
-  window.location.href = url;
+  window.location.href = `${AUTH_BASE}/authorize?provider=google&redirect_to=${redirectTo}`;
 }
 
 // ── Sign Out ─────────────────────────────────────────────
@@ -142,15 +156,13 @@ function handleGoogleAuth() {
 async function handleSignOut() {
   const session = getSession();
   if (session && session.access_token) {
-    // Call Supabase signout to invalidate the token server-side
     await xhrRequest('POST', `${AUTH_BASE}/logout`, null);
   }
   clearSession();
   window.location.href = '/index.html';
 }
 
-// ── OAuth Callback Handler ────────────────────────────────
-// Call this on dashboard load to catch Google OAuth redirect tokens
+// ── OAuth callback — captures token from URL hash ────────
 
 function handleOAuthCallback() {
   const hash = window.location.hash;
@@ -159,56 +171,116 @@ function handleOAuthCallback() {
   const params = new URLSearchParams(hash.replace('#', '?'));
   const accessToken  = params.get('access_token');
   const refreshToken = params.get('refresh_token');
-  const expiresIn    = params.get('expires_in');
+  const expiresIn    = parseInt(params.get('expires_in') || '3600', 10);
 
   if (accessToken) {
-    const session = {
+    saveSession({
       access_token:  accessToken,
       refresh_token: refreshToken,
-      expires_in:    parseInt(expiresIn, 10),
-      user: null  // will be populated by fetchCurrentUser()
-    };
-    saveSession(session);
-    // Clean the URL hash
+      expires_in:    expiresIn,
+      expires_at:    Math.floor(Date.now() / 1000) + expiresIn
+    });
     history.replaceState(null, '', window.location.pathname);
   }
 }
 
-// ── Fetch current user profile from DB ───────────────────
+// ── Fetch profile from DB (with cache) ───────────────────
 
 async function fetchCurrentUser() {
   const session = getSession();
   if (!session || !session.access_token) return null;
 
-  const { data, error } = await xhrGet('profiles', 'select=*&limit=1', {
-    'Authorization': `Bearer ${session.access_token}`
-  });
+  // Return cached profile if available
+  const cached = getCachedProfile();
+  if (cached) return cached;
+
+  const { data, error } = await xhrGet(
+    'profiles', 'select=*&limit=1',
+    { 'Authorization': `Bearer ${session.access_token}` }
+  );
 
   if (error || !data || !data.length) return null;
+  saveProfile(data[0]);
   return data[0];
+}
+
+// Bust the profile cache (call after profile updates)
+function invalidateProfileCache() {
+  localStorage.removeItem(PROFILE_KEY);
+}
+
+// ── Update callsign ──────────────────────────────────────
+
+async function updateCallsign(newCallsign) {
+  const session = getSession();
+  if (!session) return { error: 'NOT AUTHENTICATED' };
+
+  newCallsign = newCallsign.trim().toUpperCase();
+  if (!/^[A-Za-z0-9_\-]+$/.test(newCallsign) || newCallsign.length < 3) {
+    return { error: 'INVALID CALLSIGN FORMAT' };
+  }
+
+  // Check availability
+  const { data: existing } = await xhrGet(
+    'profiles', `select=id&callsign=eq.${encodeURIComponent(newCallsign)}`
+  );
+  if (existing && existing.length > 0) {
+    return { error: `CALLSIGN "${newCallsign}" IS ALREADY TAKEN` };
+  }
+
+  const profile = getCachedProfile();
+  if (!profile) return { error: 'PROFILE NOT LOADED' };
+
+  const { data, error } = await xhrPatch(
+    'profiles',
+    `id=eq.${profile.id}`,
+    { callsign: newCallsign }
+  );
+
+  if (error) return { error };
+  invalidateProfileCache();
+  return { data };
 }
 
 // ── UI helpers ───────────────────────────────────────────
 
-function showError(el, msg) {
+function showAuthError(el, msg) {
   el.textContent = msg;
   el.classList.add('visible');
 }
 
-// ── Toast notifications ──────────────────────────────────
+function setButtonLoading(btn, text) {
+  btn.disabled = true;
+  btn.dataset.originalText = btn.textContent;
+  btn.textContent = text;
+}
+
+function resetButton(btn, text) {
+  btn.disabled = false;
+  btn.textContent = text || btn.dataset.originalText || 'SUBMIT';
+}
+
+function showForm(name) {
+  ['signin', 'signup', 'confirm'].forEach(f => {
+    const el = document.getElementById('form-' + f);
+    if (el) el.classList.add('hidden');
+  });
+  const target = document.getElementById('form-' + name);
+  if (target) target.classList.remove('hidden');
+}
+
+// ── Toast ────────────────────────────────────────────────
 
 function showToast(message, type = 'default') {
   const container = document.getElementById('toast-container');
   if (!container) return;
-
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
   toast.textContent = message;
   container.appendChild(toast);
-
   setTimeout(() => {
     toast.style.opacity = '0';
     toast.style.transition = 'opacity 0.3s';
     setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  }, 3500);
 }

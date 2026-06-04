@@ -10,7 +10,6 @@
 </head>
 <body>
 
-<!-- ── Topbar ────────────────────────────────────────── -->
 <header class="topbar">
   <div class="topbar-logo">
     <div class="topbar-logo-name">WARROOM</div>
@@ -18,85 +17,53 @@
   </div>
 
   <nav class="topbar-nav" role="navigation" aria-label="Main navigation">
-    <button class="nav-tab active" data-page="intel"     onclick="navTo('intel', this)">INTEL FEED</button>
-    <button class="nav-tab"        data-page="leaks"     onclick="navTo('leaks', this)">LEAK TRACKER</button>
-    <button class="nav-tab"        data-page="weapons"   onclick="navTo('weapons', this)">WEAPONS DB</button>
-    <button class="nav-tab"        data-page="reports"   onclick="navTo('reports', this)">FIELD REPORTS</button>
-    <button class="nav-tab"        data-page="fragcast"  onclick="navTo('fragcast', this)">FRAGCAST</button>
-    <button class="nav-tab"        data-page="dossier"   onclick="navTo('dossier', this)" id="nav-dossier">DOSSIER</button>
+    <button class="nav-tab active" onclick="navTo('intel', this)">INTEL FEED</button>
+    <button class="nav-tab"        onclick="navTo('leaks', this)">LEAK TRACKER</button>
+    <button class="nav-tab"        onclick="navTo('weapons', this)">WEAPONS DB</button>
+    <button class="nav-tab"        onclick="navTo('reports', this)">FIELD REPORTS</button>
+    <button class="nav-tab"        onclick="navTo('fragcast', this)">FRAGCAST</button>
+    <button class="nav-tab"        onclick="navTo('dossier', this)" id="nav-dossier">DOSSIER</button>
   </nav>
 
   <div class="topbar-right">
-    <span class="callsign-badge" id="topbar-callsign">...</span>
+    <span class="callsign-badge" id="topbar-callsign">
+      <span class="spinner" style="width:10px;height:10px;border-width:1px;"></span>
+    </span>
     <button class="btn btn-ghost" onclick="handleSignOut()">GO DARK</button>
   </div>
 </header>
 
-<!-- ── Main content ──────────────────────────────────── -->
-<main class="app-main" id="app-main">
+<main class="app-main">
 
-  <!-- INTEL FEED PAGE -->
   <div class="page active" id="page-intel">
     <div id="intel-content">
-      <!-- Populated by intel.js -->
-      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
-                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
-        LOADING INTEL...
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+                  letter-spacing:2px;padding:2rem 0;text-align:center;">
+        <span class="spinner"></span>
       </div>
     </div>
   </div>
 
-  <!-- LEAK TRACKER PAGE -->
   <div class="page" id="page-leaks">
-    <div id="leaks-content">
-      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
-                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
-        LOADING LEAK TRACKER...
-      </div>
-    </div>
+    <div id="leaks-content"></div>
   </div>
 
-  <!-- WEAPONS DB PAGE -->
   <div class="page" id="page-weapons">
-    <div id="weapons-content">
-      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
-                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
-        LOADING WEAPONS DATABASE...
-      </div>
-    </div>
+    <div id="weapons-content"></div>
   </div>
 
-  <!-- FIELD REPORTS PAGE -->
   <div class="page" id="page-reports">
-    <div id="reports-content">
-      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
-                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
-        LOADING FIELD REPORTS...
-      </div>
-    </div>
+    <div id="reports-content"></div>
   </div>
 
-  <!-- FRAGCAST PAGE -->
   <div class="page" id="page-fragcast">
-    <div id="fragcast-content">
-      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
-                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
-        LOADING FRAGCAST...
-      </div>
-    </div>
+    <div id="fragcast-content"></div>
   </div>
 
-  <!-- DOSSIER PAGE -->
   <div class="page" id="page-dossier">
-    <div id="dossier-content">
-      <div style="font-family: var(--font-mono); font-size: 10px; color: var(--bone-dim);
-                  letter-spacing: 2px; padding: 2rem 0; text-align: center;">
-        LOADING DOSSIER...
-      </div>
-    </div>
+    <div id="dossier-content"></div>
   </div>
 
-  <!-- Phase strip (shown on all pages) -->
   <div class="phase-strip">
     <span class="phase-badge phase-active">PHASE 01 — PRE-LAUNCH</span>
     <span class="phase-badge phase-locked">PHASE 02 — LAUNCH WEEK [LOCKED]</span>
@@ -105,10 +72,8 @@
 
 </main>
 
-<!-- Toast container -->
 <div id="toast-container" aria-live="polite"></div>
 
-<!-- Scripts — load order matters -->
 <script src="js/config.js"></script>
 <script src="js/xhr.js"></script>
 <script src="js/auth.js"></script>
@@ -118,46 +83,53 @@
 <script src="js/votes.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/fragcast.js"></script>
+<script src="js/dossier.js"></script>
 
 <script>
-  // ── Boot sequence ──────────────────────────────────────
-  window.addEventListener('DOMContentLoaded', async function () {
+  let currentUser = null;
+  let currentPage = 'intel';
 
-    // Handle Google OAuth callback tokens in URL hash
+  window.addEventListener('DOMContentLoaded', async function () {
+    // Catch Google OAuth token in URL hash
     handleOAuthCallback();
 
-    // Redirect to login if not authenticated
+    // Guard — redirect if not logged in
     if (!requireAuth()) return;
 
-    // Load current user profile and set callsign in topbar
-    const user = await fetchCurrentUser();
-    if (user) {
-      document.getElementById('topbar-callsign').textContent = user.callsign;
-      // Show admin link in nav if applicable
-      if (user.role === 'admin' || user.role === 'command') {
-        const adminLink = document.createElement('a');
-        adminLink.href = '/admin/';
-        adminLink.className = 'nav-tab';
-        adminLink.style.color = 'var(--gold)';
-        adminLink.textContent = 'COMMAND';
-        document.querySelector('.topbar-nav').appendChild(adminLink);
+    // Load profile
+    currentUser = await fetchCurrentUser();
+
+    if (currentUser) {
+      document.getElementById('topbar-callsign').textContent = currentUser.callsign;
+
+      // Show Command link for admins
+      if (currentUser.role === 'admin' || currentUser.role === 'command') {
+        const a = document.createElement('a');
+        a.href = '/admin/';
+        a.className = 'nav-tab';
+        a.style.color = 'var(--gold)';
+        a.textContent = 'COMMAND';
+        document.querySelector('.topbar-nav').appendChild(a);
+      }
+    } else {
+      // Google OAuth new user — needs callsign setup
+      const session = getSession();
+      if (session && session.access_token) {
+        showCallsignSetup();
+        return;
       }
     }
 
-    // Load the default page (intel feed)
     loadPage('intel');
   });
 
-  // ── Page router ───────────────────────────────────────
-  let currentPage = 'intel';
+  // ── Page router ──────────────────────────────────────────
 
   function navTo(pageId, tabEl) {
     document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
     if (tabEl) tabEl.classList.add('active');
-
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-' + pageId).classList.add('active');
-
     currentPage = pageId;
     loadPage(pageId);
   }
@@ -171,6 +143,91 @@
       case 'fragcast': loadFragcastPage(); break;
       case 'dossier':  loadDossierPage();  break;
     }
+  }
+
+  // ── Google OAuth new user — callsign setup modal ─────────
+
+  function showCallsignSetup() {
+    document.querySelector('.app-main').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;
+                  min-height:60vh;padding:1rem;">
+        <div class="card card-top" style="max-width:400px;width:100%;">
+          <div class="card-header">
+            <div class="card-title">CHOOSE YOUR CALLSIGN</div>
+          </div>
+          <p style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+                    letter-spacing:1px;margin-bottom:1rem;line-height:1.6;">
+            GOOGLE AUTH SUCCESSFUL. ASSIGN YOUR OPERATIVE DESIGNATION.
+          </p>
+          <div class="error-msg" id="callsign-setup-error"></div>
+          <div class="field-group">
+            <label class="field-label" for="new-callsign">CALLSIGN</label>
+            <input class="mil-input" type="text" id="new-callsign"
+                   placeholder="E.G. GHOST_OPS" maxlength="24" autocomplete="off"
+                   oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_\\-]/g,'')">
+          </div>
+          <button class="btn btn-primary btn-full" id="btn-set-callsign"
+                  onclick="submitCallsignSetup()">
+            CONFIRM CALLSIGN
+          </button>
+        </div>
+      </div>`;
+  }
+
+  async function submitCallsignSetup() {
+    const input  = document.getElementById('new-callsign');
+    const errEl  = document.getElementById('callsign-setup-error');
+    const btn    = document.getElementById('btn-set-callsign');
+    const cs     = input.value.trim().toUpperCase();
+
+    errEl.classList.remove('visible');
+
+    if (!cs || cs.length < 3) {
+      errEl.textContent = 'CALLSIGN MUST BE AT LEAST 3 CHARACTERS';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    setButtonLoading(btn, 'ASSIGNING...');
+
+    // Upsert profile with this callsign
+    const session = getSession();
+    const { data: userData } = await xhrRequest('GET', `${AUTH_BASE}/user`, null, {
+      'Authorization': `Bearer ${session.access_token}`
+    });
+
+    if (!userData || !userData.id) {
+      resetButton(btn, 'CONFIRM CALLSIGN');
+      errEl.textContent = 'COULD NOT RETRIEVE USER — TRY REFRESHING';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    // Check availability
+    const { data: existing } = await xhrGet(
+      'profiles', `select=id&callsign=eq.${encodeURIComponent(cs)}`
+    );
+    if (existing && existing.length > 0) {
+      resetButton(btn, 'CONFIRM CALLSIGN');
+      errEl.textContent = `CALLSIGN "${cs}" IS ALREADY TAKEN`;
+      errEl.classList.add('visible');
+      return;
+    }
+
+    const { error } = await xhrRequest('POST', `${API_BASE}/profiles`, {
+      id: userData.id,
+      callsign: cs
+    });
+
+    if (error) {
+      resetButton(btn, 'CONFIRM CALLSIGN');
+      errEl.textContent = 'FAILED TO SET CALLSIGN — TRY AGAIN';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    invalidateProfileCache();
+    window.location.reload();
   }
 </script>
 

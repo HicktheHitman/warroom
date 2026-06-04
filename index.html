@@ -28,25 +28,25 @@
 
   <div class="classified-tag">CLASSIFIED — AUTHORIZED PERSONNEL ONLY</div>
 
-  <!-- ── Sign In Form ── -->
+  <!-- ── Sign In ── -->
   <div class="login-box" id="form-signin">
     <div class="error-msg" id="signin-error"></div>
 
     <div class="field-group">
-      <label class="field-label" for="signin-email">CALLSIGN / EMAIL</label>
+      <label class="field-label" for="signin-email">EMAIL</label>
       <input class="mil-input" type="email" id="signin-email"
              placeholder="OPERATIVE@DOMAIN.COM" autocomplete="email">
     </div>
     <div class="field-group">
       <label class="field-label" for="signin-password">AUTHORIZATION CODE</label>
       <input class="mil-input" type="password" id="signin-password"
-             placeholder="••••••••••••" autocomplete="current-password">
+             placeholder="••••••••••••" autocomplete="current-password"
+             onkeydown="if(event.key==='Enter') handleSignIn()">
     </div>
 
     <button class="btn btn-primary btn-full" id="btn-signin" onclick="handleSignIn()">
       AUTHENTICATE
     </button>
-
     <div style="margin-top: 8px;">
       <button class="btn btn-secondary btn-full" onclick="showForm('signup')">
         REQUEST CLEARANCE
@@ -55,8 +55,8 @@
 
     <div class="divider">OR</div>
 
-    <button class="btn btn-secondary btn-full" id="btn-google" onclick="handleGoogleAuth()"
-            style="font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px; gap: 8px;">
+    <button class="btn btn-secondary btn-full" onclick="handleGoogleAuth()"
+            style="font-family:var(--font-mono);font-size:10px;letter-spacing:1px;gap:8px;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
@@ -67,18 +67,17 @@
     </button>
   </div>
 
-  <!-- ── Sign Up Form ── -->
+  <!-- ── Sign Up ── -->
   <div class="login-box hidden" id="form-signup">
     <div class="error-msg" id="signup-error"></div>
 
     <div class="field-group">
       <label class="field-label" for="signup-callsign">CHOOSE YOUR CALLSIGN</label>
       <input class="mil-input" type="text" id="signup-callsign"
-             placeholder="E.G. GHOST_OPS" maxlength="24"
-             pattern="[A-Za-z0-9_\-]+" autocomplete="off">
-      <div style="font-family: var(--font-mono); font-size: 9px; color: var(--bone-dim);
-                  margin-top: 5px; letter-spacing: 0.5px;">
-        Letters, numbers, _ and - only. No spaces.
+             placeholder="E.G. GHOST_OPS" maxlength="24" autocomplete="off"
+             oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_\-]/g,'')">
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);margin-top:5px;">
+        LETTERS, NUMBERS, _ AND - ONLY. 3–24 CHARACTERS.
       </div>
     </div>
     <div class="field-group">
@@ -90,50 +89,49 @@
       <label class="field-label" for="signup-password">AUTHORIZATION CODE</label>
       <input class="mil-input" type="password" id="signup-password"
              placeholder="MIN 8 CHARACTERS" autocomplete="new-password">
+      <div id="pw-strength" style="margin-top:5px;height:3px;background:var(--navy-border);"></div>
     </div>
 
     <button class="btn btn-primary btn-full" id="btn-signup" onclick="handleSignUp()">
       REQUEST CLEARANCE
     </button>
-    <div style="margin-top: 8px;">
+    <div style="margin-top:8px;">
       <button class="btn btn-secondary btn-full" onclick="showForm('signin')">
         ← BACK TO AUTHENTICATE
       </button>
     </div>
   </div>
 
-  <!-- ── Email confirmation message ── -->
+  <!-- ── Email confirmation ── -->
   <div class="login-box hidden" id="form-confirm">
-    <div style="text-align: center; padding: 0.5rem 0;">
-      <div style="font-family: var(--font-mil); font-size: 11px; color: var(--olive-glow);
-                  letter-spacing: 3px; margin-bottom: 0.75rem;">
+    <div style="text-align:center;padding:0.5rem 0;">
+      <div style="font-family:var(--font-mil);font-size:11px;color:var(--olive-glow);
+                  letter-spacing:3px;margin-bottom:0.75rem;">
         CLEARANCE REQUESTED
       </div>
-      <div style="font-family: var(--font-mono); font-size: 11px; color: var(--bone-muted);
-                  line-height: 1.6; letter-spacing: 0.5px;">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--bone-muted);
+                  line-height:1.7;letter-spacing:0.5px;">
         Check your email to confirm your account.<br>
-        Once confirmed, return to authenticate.
+        Once confirmed, return here to authenticate.
       </div>
-      <button class="btn btn-secondary" style="margin-top: 1rem;" onclick="showForm('signin')">
+      <button class="btn btn-secondary" style="margin-top:1rem;" onclick="showForm('signin')">
         BACK TO AUTHENTICATE
       </button>
     </div>
   </div>
 
   <div class="login-footer">
-    DEVELOPED BY HICKTHEHITMAN &amp; ZANGETSU
+    DEVELOPED BY HICKTHEHITMAN &amp; ZANGETSU &nbsp;|&nbsp; MW4 INTEL HUB
   </div>
 </div>
 
-<!-- Toast container -->
 <div id="toast-container" aria-live="polite"></div>
 
 <script src="js/config.js"></script>
 <script src="js/xhr.js"></script>
 <script src="js/auth.js"></script>
-
 <script>
-  // Redirect to dashboard if already logged in
+  // Redirect if already logged in
   window.addEventListener('DOMContentLoaded', function () {
     const session = getSession();
     if (session && session.access_token) {
@@ -141,13 +139,21 @@
     }
   });
 
-  function showForm(name) {
-    document.getElementById('form-signin').classList.add('hidden');
-    document.getElementById('form-signup').classList.add('hidden');
-    document.getElementById('form-confirm').classList.add('hidden');
-    document.getElementById('form-' + name).classList.remove('hidden');
-  }
+  // Password strength indicator
+  document.addEventListener('DOMContentLoaded', function () {
+    const pwInput = document.getElementById('signup-password');
+    const bar     = document.getElementById('pw-strength');
+    if (!pwInput || !bar) return;
+    pwInput.addEventListener('input', function () {
+      const len = pwInput.value.length;
+      const colors = ['var(--red)', 'var(--red)', 'var(--gold)', 'var(--olive-glow)'];
+      const widths = ['0%', '33%', '66%', '100%'];
+      const level = len === 0 ? 0 : len < 8 ? 1 : len < 12 ? 2 : 3;
+      bar.style.background = colors[level];
+      bar.style.width = widths[level];
+      bar.style.transition = 'width 0.3s, background 0.3s';
+    });
+  });
 </script>
-
 </body>
 </html>
