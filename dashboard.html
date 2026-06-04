@@ -96,8 +96,17 @@
     // Guard — redirect if not logged in
     if (!requireAuth()) return;
 
-    // Load profile
+    // Load profile from DB
     currentUser = await fetchCurrentUser();
+
+    // Fallback: pull callsign from session user_metadata if DB fetch failed
+    if (!currentUser) {
+      const session = getSession();
+      const meta = session && session.user && session.user.user_metadata;
+      if (meta && meta.callsign) {
+        currentUser = { callsign: meta.callsign, role: 'operative', id: session.user.id };
+      }
+    }
 
     if (currentUser) {
       document.getElementById('topbar-callsign').textContent = currentUser.callsign;
@@ -112,9 +121,9 @@
         document.querySelector('.topbar-nav').appendChild(a);
       }
     } else {
-      // Google OAuth new user — needs callsign setup
+      // Truly new Google OAuth user with no profile and no metadata — needs callsign setup
       const session = getSession();
-      if (session && session.access_token) {
+      if (session && session.access_token && !(session.user && session.user.user_metadata && session.user.user_metadata.callsign)) {
         showCallsignSetup();
         return;
       }
