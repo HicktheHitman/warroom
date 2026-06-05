@@ -233,10 +233,84 @@ async function submitHypeVote() {
   showToast('HYPE VOTE FILED', 'success');
 }
 
+// ── Enlisted Operatives Board ─────────────────────────────
+
+async function renderRecruits(profiles) {
+  const container = document.getElementById('recruits-wrap');
+  if (!container) return;
+
+  const { data: countData } = await xhrGet('profiles', 'select=id');
+  const totalCount = countData ? countData.length : profiles.length;
+
+  if (!profiles.length) {
+    container.innerHTML = `
+      <div class="card card-top-olive">
+        <div class="card-header">
+          <div class="card-title">ENLISTED OPERATIVES</div>
+          <div class="dot dot-olive"></div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+                    padding:1rem 0;text-align:center;letter-spacing:1px;">
+          NO OPERATIVES YET
+        </div>
+      </div>`;
+    return;
+  }
+
+  const recentList = profiles.map(p => {
+    const roleBadge = (p.role === 'admin' || p.role === 'command')
+      ? '<span class="badge badge-command" style="font-size:7px;padding:1px 5px;">CMD</span>'
+      : '';
+    const joinDate = new Date(p.created_at).toLocaleDateString('en-US', {
+      month: 'short', day: 'numeric'
+    });
+    return `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding:5px 0;border-bottom:1px solid var(--navy-border-dim);">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:22px;height:22px;background:var(--navy-border);
+                      border:1px solid var(--navy-border);display:flex;align-items:center;
+                      justify-content:center;font-family:var(--font-mil);font-size:9px;
+                      color:var(--gold);flex-shrink:0;">
+            ${escHtml(p.callsign || '?').charAt(0)}
+          </div>
+          <span style="font-family:var(--font-mono);font-size:10px;color:var(--bone);
+                       letter-spacing:0.5px;">${escHtml(p.callsign || 'UNKNOWN')}</span>
+          ${roleBadge}
+        </div>
+        <span style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);">
+          ${joinDate.toUpperCase()}
+        </span>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="card card-top-olive">
+      <div class="card-header">
+        <div class="card-title">ENLISTED OPERATIVES</div>
+        <div class="dot dot-olive"></div>
+      </div>
+      <div style="text-align:center;padding:0.75rem 0;border-bottom:1px solid var(--navy-border);
+                  margin-bottom:0.75rem;">
+        <div style="font-family:var(--font-mil);font-size:40px;font-weight:900;
+                    color:var(--olive-glow);line-height:1;">${totalCount}</div>
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);
+                    letter-spacing:2px;margin-top:3px;">OPERATIVES ENLISTED</div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);
+                  letter-spacing:2px;margin-bottom:6px;">RECENTLY ENLISTED</div>
+      ${recentList}
+      <div style="margin-top:8px;text-align:center;">
+        <a href="/index.html" style="font-family:var(--font-mono);font-size:9px;
+           color:var(--olive-glow);letter-spacing:1px;">+ REQUEST CLEARANCE</a>
+      </div>
+    </div>`;
+}
+
 // ── Helpers ───────────────────────────────────────────────
 
 function escHtml(str) {
   if (!str) return '';
   return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+            .replace(/"/g,'&quot;').replace(/'''g,'&#039;');
 }
