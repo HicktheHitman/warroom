@@ -24,13 +24,12 @@
 
 <main class="app-main">
 
-  <!-- Post Intel -->
+  <!-- ── POST INTEL ── -->
   <div class="card card-top" style="margin-bottom:1rem;">
     <div class="card-header">
       <div class="card-title">POST INTEL</div>
       <div class="dot dot-gold"></div>
     </div>
-
     <div class="error-msg" id="post-error"></div>
     <div id="post-success" style="display:none;font-family:var(--font-mono);font-size:10px;
          color:var(--olive-glow);letter-spacing:1px;margin-bottom:10px;padding:6px 8px;
@@ -44,20 +43,17 @@
       </div>
       <div class="field-group" style="margin-bottom:0;">
         <label class="field-label" for="intel-status">STATUS</label>
-        <select class="mil-input" id="intel-status"
-                style="cursor:pointer;background:var(--navy);">
+        <select class="mil-input" id="intel-status" style="cursor:pointer;background:var(--navy);">
           <option value="confirmed">CONFIRMED INTEL (GOLD)</option>
           <option value="urgent">URGENT INTEL (RED ALERT)</option>
         </select>
       </div>
     </div>
-
     <div class="field-group">
       <label class="field-label" for="intel-body">BODY (OPTIONAL)</label>
       <textarea class="mil-input" id="intel-body" rows="3"
                 placeholder="Additional details about this intel..."></textarea>
     </div>
-
     <div class="grid-2" style="margin-bottom:1rem;">
       <div class="field-group" style="margin-bottom:0;">
         <label class="field-label" for="intel-source-name">SOURCE NAME</label>
@@ -66,30 +62,124 @@
       </div>
       <div class="field-group" style="margin-bottom:0;">
         <label class="field-label" for="intel-source-url">SOURCE URL (OPTIONAL)</label>
-        <input class="mil-input" type="url" id="intel-source-url"
-               placeholder="https://...">
+        <input class="mil-input" type="url" id="intel-source-url" placeholder="https://...">
       </div>
     </div>
-
     <button class="btn btn-primary" id="btn-post-intel" onclick="postIntel()">
       TRANSMIT INTEL
     </button>
   </div>
 
-  <!-- Intel list -->
-  <div class="card card-top">
+  <!-- ── POSTED INTEL ── -->
+  <div class="card card-top" style="margin-bottom:1rem;">
     <div class="card-header">
       <div class="card-title">POSTED INTEL</div>
-      <button class="btn btn-ghost" onclick="loadPostedIntel()" style="font-size:9px;">
-        REFRESH
-      </button>
+      <button class="btn btn-ghost" onclick="loadPostedIntel()" style="font-size:9px;">REFRESH</button>
     </div>
     <div id="posted-intel-list">
       <div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>
     </div>
   </div>
 
+  <!-- ── WEAPON MANAGEMENT ── -->
+  <div class="card card-top-olive" style="margin-bottom:1rem;">
+    <div class="card-header">
+      <div class="card-title">WEAPON MANAGEMENT</div>
+      <div class="dot dot-olive"></div>
+    </div>
+    <div class="error-msg" id="weapon-error"></div>
+    <div id="weapon-success" style="display:none;font-family:var(--font-mono);font-size:10px;
+         color:var(--olive-glow);letter-spacing:1px;margin-bottom:10px;padding:6px 8px;
+         background:var(--olive-bg);border:1px solid var(--olive);"></div>
+
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="weapon-name">WEAPON NAME</label>
+        <input class="mil-input" type="text" id="weapon-name" placeholder="E.G. M4A1">
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="weapon-category">CATEGORY</label>
+        <select class="mil-input" id="weapon-category" style="cursor:pointer;background:var(--navy);">
+          <option value="AR">ASSAULT RIFLE (AR)</option>
+          <option value="SMG">SMG</option>
+          <option value="LMG">LMG</option>
+          <option value="Sniper">SNIPER</option>
+          <option value="Shotgun">SHOTGUN</option>
+          <option value="Pistol">PISTOL</option>
+          <option value="Launcher">LAUNCHER</option>
+          <option value="Melee">MELEE</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group" style="margin-bottom:1rem;">
+      <label class="field-label">TYPE</label>
+      <div style="display:flex;gap:12px;margin-top:4px;">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--bone-muted);
+                      display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="weapon-type" value="returning" checked> RETURNING
+        </label>
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--bone-muted);
+                      display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="weapon-type" value="new"> NEW
+        </label>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-add-weapon" onclick="addWeapon()"
+            style="background:var(--olive-bright);margin-bottom:1rem;">
+      ADD WEAPON
+    </button>
+
+    <!-- Weapon list -->
+    <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                letter-spacing:2px;margin-bottom:8px;padding-top:8px;
+                border-top:1px solid var(--navy-border);">CURRENT WEAPONS</div>
+    <div id="weapons-admin-list">
+      <div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>
+    </div>
+  </div>
+
 </main>
+
+<!-- Edit Intel Modal -->
+<div id="edit-modal-overlay" class="modal-overlay hidden" onclick="closeEditModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">EDIT INTEL</div>
+    <div class="error-msg" id="edit-error"></div>
+    <input type="hidden" id="edit-intel-id">
+
+    <div class="grid-2" style="margin-bottom:0;">
+      <div class="field-group">
+        <label class="field-label" for="edit-title">TITLE</label>
+        <input class="mil-input" type="text" id="edit-title">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="edit-status">STATUS</label>
+        <select class="mil-input" id="edit-status" style="cursor:pointer;background:var(--navy);">
+          <option value="confirmed">CONFIRMED INTEL (GOLD)</option>
+          <option value="urgent">URGENT INTEL (RED ALERT)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="edit-body">BODY</label>
+      <textarea class="mil-input" id="edit-body" rows="3"></textarea>
+    </div>
+    <div class="grid-2">
+      <div class="field-group">
+        <label class="field-label" for="edit-source-name">SOURCE NAME</label>
+        <input class="mil-input" type="text" id="edit-source-name">
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="edit-source-url">SOURCE URL</label>
+        <input class="mil-input" type="url" id="edit-source-url">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeEditModal()">CANCEL</button>
+      <button class="btn btn-primary" id="btn-save-edit" onclick="saveIntelEdit()">SAVE CHANGES</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast-container" aria-live="polite"></div>
 
@@ -100,7 +190,6 @@
 <script>
   window.addEventListener('DOMContentLoaded', async function () {
     if (!requireAuth()) return;
-
     const user = await fetchCurrentUser();
     if (!user || (user.role !== 'admin' && user.role !== 'command')) {
       document.querySelector('.app-main').innerHTML = `
@@ -113,10 +202,12 @@
         </div>`;
       return;
     }
-
     document.getElementById('admin-callsign').textContent = user.callsign;
     loadPostedIntel();
+    loadWeaponsAdmin();
   });
+
+  // ── POST INTEL ──────────────────────────────────────────
 
   async function postIntel() {
     const title      = document.getElementById('intel-title').value.trim();
@@ -130,20 +221,14 @@
 
     errEl.classList.remove('visible');
     sucEl.style.display = 'none';
-
-    if (!title) {
-      errEl.textContent = 'INTEL TITLE IS REQUIRED';
-      errEl.classList.add('visible');
-      return;
-    }
+    if (!title) { errEl.textContent = 'INTEL TITLE IS REQUIRED'; errEl.classList.add('visible'); return; }
 
     const profile = getCachedProfile();
     setButtonLoading(btn, 'TRANSMITTING...');
 
     const { data, error } = await xhrPost('intel_posts', {
-      title,
-      status,
-      body:        body || null,
+      title, status,
+      body:        body       || null,
       source_name: sourceName || null,
       source_url:  sourceUrl  || null,
       posted_by:   profile?.id || null
@@ -151,24 +236,19 @@
 
     resetButton(btn, 'TRANSMIT INTEL');
 
-    if (error) {
-      errEl.textContent = 'FAILED TO POST: ' + error;
-      errEl.classList.add('visible');
-      return;
-    }
+    if (error) { errEl.textContent = 'FAILED TO POST: ' + error; errEl.classList.add('visible'); return; }
 
-    // Clear form
     document.getElementById('intel-title').value = '';
     document.getElementById('intel-body').value = '';
     document.getElementById('intel-source-name').value = '';
     document.getElementById('intel-source-url').value = '';
-
     sucEl.textContent = `INTEL TRANSMITTED: "${title}"`;
     sucEl.style.display = 'block';
-
     loadPostedIntel();
-    showToast('INTEL POSTED SUCCESSFULLY', 'success');
+    showToast('INTEL POSTED', 'success');
   }
+
+  // ── LOAD POSTED INTEL ───────────────────────────────────
 
   async function loadPostedIntel() {
     const container = document.getElementById('posted-intel-list');
@@ -195,21 +275,77 @@
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
               <span class="badge ${badgeClass}">${p.status.toUpperCase()}</span>
               <span style="font-family:var(--font-body);font-size:13px;font-weight:600;
-                           color:var(--bone);">${escHtml(p.title)}</span>
+                           color:var(--bone);">${esc(p.title)}</span>
             </div>
             ${p.body ? `<div style="font-family:var(--font-body);font-size:12px;
-              color:var(--bone-muted);margin-bottom:3px;">${escHtml(p.body)}</div>` : ''}
+              color:var(--bone-muted);margin-bottom:3px;">${esc(p.body)}</div>` : ''}
             <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);">
-              ${p.source_name ? escHtml(p.source_name).toUpperCase() + ' — ' : ''}
-              ${date.toUpperCase()}
+              ${p.source_name ? esc(p.source_name).toUpperCase() + ' — ' : ''}${date.toUpperCase()}
             </div>
           </div>
-          <button class="btn btn-danger" style="padding:4px 10px;font-size:8px;flex-shrink:0;"
-                  onclick="deleteIntel('${p.id}')">
-            DELETE
-          </button>
+          <div style="display:flex;gap:4px;flex-shrink:0;">
+            <button class="btn btn-secondary" style="padding:4px 10px;font-size:8px;"
+                    onclick="openEditModal('${p.id}','${esc(p.title).replace(/'/g,"\\'")}','${p.status}',
+                    '${esc(p.body||'').replace(/'/g,"\\'")}',
+                    '${esc(p.source_name||'').replace(/'/g,"\\'")}',
+                    '${esc(p.source_url||'').replace(/'/g,"\\'")}')">
+              EDIT
+            </button>
+            <button class="btn btn-danger" style="padding:4px 10px;font-size:8px;"
+                    onclick="deleteIntel('${p.id}')">DELETE</button>
+          </div>
         </div>`;
     }).join('');
+  }
+
+  // ── EDIT INTEL ──────────────────────────────────────────
+
+  function openEditModal(id, title, status, body, sourceName, sourceUrl) {
+    document.getElementById('edit-intel-id').value = id;
+    document.getElementById('edit-title').value = title;
+    document.getElementById('edit-status').value = status;
+    document.getElementById('edit-body').value = body;
+    document.getElementById('edit-source-name').value = sourceName;
+    document.getElementById('edit-source-url').value = sourceUrl;
+    document.getElementById('edit-error').classList.remove('visible');
+    document.getElementById('edit-modal-overlay').classList.remove('hidden');
+  }
+
+  function closeEditModal(event) {
+    if (!event || event.target.id === 'edit-modal-overlay') {
+      document.getElementById('edit-modal-overlay').classList.add('hidden');
+    }
+  }
+
+  async function saveIntelEdit() {
+    const id         = document.getElementById('edit-intel-id').value;
+    const title      = document.getElementById('edit-title').value.trim();
+    const status     = document.getElementById('edit-status').value;
+    const body       = document.getElementById('edit-body').value.trim();
+    const sourceName = document.getElementById('edit-source-name').value.trim();
+    const sourceUrl  = document.getElementById('edit-source-url').value.trim();
+    const errEl      = document.getElementById('edit-error');
+    const btn        = document.getElementById('btn-save-edit');
+
+    errEl.classList.remove('visible');
+    if (!title) { errEl.textContent = 'TITLE IS REQUIRED'; errEl.classList.add('visible'); return; }
+
+    setButtonLoading(btn, 'SAVING...');
+
+    const { error } = await xhrPatch('intel_posts', `id=eq.${id}`, {
+      title, status,
+      body:        body       || null,
+      source_name: sourceName || null,
+      source_url:  sourceUrl  || null
+    });
+
+    resetButton(btn, 'SAVE CHANGES');
+
+    if (error) { errEl.textContent = 'SAVE FAILED: ' + error; errEl.classList.add('visible'); return; }
+
+    document.getElementById('edit-modal-overlay').classList.add('hidden');
+    showToast('INTEL UPDATED', 'success');
+    loadPostedIntel();
   }
 
   async function deleteIntel(id) {
@@ -220,10 +356,96 @@
     loadPostedIntel();
   }
 
-  function escHtml(str) {
+  // ── WEAPON MANAGEMENT ───────────────────────────────────
+
+  async function addWeapon() {
+    const name     = document.getElementById('weapon-name').value.trim().toUpperCase();
+    const category = document.getElementById('weapon-category').value;
+    const type     = document.querySelector('input[name="weapon-type"]:checked').value;
+    const errEl    = document.getElementById('weapon-error');
+    const sucEl    = document.getElementById('weapon-success');
+    const btn      = document.getElementById('btn-add-weapon');
+
+    errEl.classList.remove('visible');
+    sucEl.style.display = 'none';
+
+    if (!name) { errEl.textContent = 'WEAPON NAME IS REQUIRED'; errEl.classList.add('visible'); return; }
+
+    setButtonLoading(btn, 'ADDING...');
+
+    const { error } = await xhrPost('weapons', {
+      name, category, weapon_type: type
+    });
+
+    resetButton(btn, 'ADD WEAPON');
+
+    if (error) { errEl.textContent = 'FAILED: ' + error; errEl.classList.add('visible'); return; }
+
+    document.getElementById('weapon-name').value = '';
+    sucEl.textContent = `WEAPON ADDED: ${name}`;
+    sucEl.style.display = 'block';
+    showToast(`${name} ADDED TO DB`, 'success');
+    loadWeaponsAdmin();
+  }
+
+  async function loadWeaponsAdmin() {
+    const container = document.getElementById('weapons-admin-list');
+    container.innerHTML = '<div style="text-align:center;padding:0.5rem;"><span class="spinner"></span></div>';
+
+    const { data, error } = await xhrGet('weapons', 'select=*&order=category.asc,name.asc');
+
+    if (error || !data || !data.length) {
+      container.innerHTML = `<div style="font-family:var(--font-mono);font-size:10px;
+        color:var(--bone-dim);padding:0.5rem;text-align:center;">NO WEAPONS</div>`;
+      return;
+    }
+
+    // Group by category
+    const grouped = {};
+    data.forEach(w => {
+      if (!grouped[w.category]) grouped[w.category] = [];
+      grouped[w.category].push(w);
+    });
+
+    container.innerHTML = Object.entries(grouped).map(([cat, weapons]) => `
+      <div style="margin-bottom:0.75rem;">
+        <div style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);
+                    letter-spacing:2px;margin-bottom:4px;">${cat}</div>
+        ${weapons.map(w => `
+          <div style="display:flex;align-items:center;justify-content:space-between;
+                      padding:4px 0;border-bottom:1px solid var(--navy-border-dim);">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-family:var(--font-body);font-size:12px;color:var(--bone);">
+                ${esc(w.name)}
+              </span>
+              <span style="font-family:var(--font-mono);font-size:8px;
+                           color:${w.weapon_type === 'new' ? 'var(--gold)' : 'var(--bone-dim)'};
+                           border:1px solid ${w.weapon_type === 'new' ? 'var(--gold-dim)' : 'var(--navy-border)'};
+                           padding:1px 5px;">
+                ${w.weapon_type.toUpperCase()}
+              </span>
+            </div>
+            <button class="btn btn-ghost" style="font-size:8px;color:var(--red);padding:2px 6px;"
+                    onclick="deleteWeapon('${w.id}', '${esc(w.name)}')">✕</button>
+          </div>`).join('')}
+      </div>`).join('');
+  }
+
+  async function deleteWeapon(id, name) {
+    if (!confirm(`REMOVE ${name} FROM THE DATABASE?`)) return;
+    const { error } = await xhrDelete('weapons', `id=eq.${id}`);
+    if (error) { showToast('DELETE FAILED', 'error'); return; }
+    showToast(`${name} REMOVED`, 'default');
+    loadWeaponsAdmin();
+  }
+
+  // ── Helper ───────────────────────────────────────────────
+
+  function esc(str) {
     if (!str) return '';
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-              .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 </script>
 

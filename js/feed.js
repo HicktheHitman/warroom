@@ -34,7 +34,7 @@ async function loadReportsPage() {
 async function fetchReports() {
   const { data, error } = await xhrGet(
     'field_reports_with_author',
-    'select=*&order=created_at.desc&limit=50'
+    'select=*&order=pinned.desc.nullslast,created_at.desc&limit=50'
   );
 
   const container = document.getElementById('reports-list');
@@ -73,7 +73,10 @@ async function fetchReports() {
     const canDelete = isAdmin || (profile && profile.id === r.id);
 
     return `
-      <div class="card" style="margin-bottom:0.75rem;">
+      <div class="card" style="margin-bottom:0.75rem;${r.pinned ? 'border-top:2px solid var(--gold);' : ''}">
+        ${r.pinned ? `<div style="font-family:var(--font-mono);font-size:8px;color:var(--gold);
+          letter-spacing:2px;padding:4px 0;border-bottom:1px solid var(--navy-border);
+          margin-bottom:8px;">📌 PINNED BY COMMAND</div>` : ''}
         <div style="display:flex;align-items:flex-start;gap:10px;">
 
           <!-- Avatar -->
@@ -106,7 +109,12 @@ async function fetchReports() {
 
             <!-- Actions -->
             ${canDelete ? `
-            <div style="margin-top:8px;">
+            <div style="margin-top:8px;display:flex;gap:6px;">
+              ${isAdmin ? `<button class="btn btn-ghost" style="font-size:8px;padding:2px 6px;
+                color:${r.pinned ? 'var(--gold)' : 'var(--bone-dim)'};"
+                onclick="togglePin('${r.id}', ${r.pinned || false})">
+                ${r.pinned ? '📌 PINNED' : 'PIN'}
+              </button>` : ''}
               <button class="btn btn-ghost" style="font-size:8px;color:var(--red);padding:2px 6px;"
                       onclick="deleteReport('${r.id}')">DELETE</button>
             </div>` : ''}
@@ -275,6 +283,15 @@ async function submitReport() {
 
   closeReportModal();
   showToast('FIELD REPORT FILED', 'success');
+  await fetchReports();
+}
+
+async function togglePin(id, currentlyPinned) {
+  const { error } = await xhrPatch('field_reports', `id=eq.${id}`, {
+    pinned: !currentlyPinned
+  });
+  if (error) { showToast('PIN FAILED', 'error'); return; }
+  showToast(currentlyPinned ? 'POST UNPINNED' : 'POST PINNED', 'success');
   await fetchReports();
 }
 

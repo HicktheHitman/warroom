@@ -41,13 +41,36 @@ function requireAuth() {
     window.location.href = '/index.html';
     return false;
   }
-  // Check token expiry
-  if (session.expires_at && Date.now() / 1000 > session.expires_at) {
-    clearSession();
-    window.location.href = '/index.html';
-    return false;
+  // Give a 5 minute buffer — don't boot immediately on expiry
+  // Supabase refresh tokens last 7 days by default
+  if (session.expires_at && Date.now() / 1000 > session.expires_at + 300) {
+    // Try to refresh silently before booting
+    refreshSession().then(ok => {
+      if (!ok) { clearSession(); window.location.href = '/index.html'; }
+    });
   }
   return true;
+}
+
+async function refreshSession() {
+  const session = getSession();
+  if (!session || !session.refresh_token) return false;
+  try {
+    const res = await fetch(`${AUTH_BASE}/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: {
+        'apikey': WARROOM_CONFIG.supabaseAnonKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ refresh_token: session.refresh_token })
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (!data.access_token) return false;
+    data.expires_at = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
+    saveSession(data);
+    return true;
+  } catch (e) { return false; }
 }
 
 // ── Sign In ──────────────────────────────────────────────
