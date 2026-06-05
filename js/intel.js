@@ -1,13 +1,11 @@
 // js/intel.js
 // ─────────────────────────────────────────────────────────
-// WARROOM — Intel Feed page (Step 3)
-// Loads: urgent alerts, confirmed intel board, hype meter
+// WARROOM — Intel Feed page (Step 3 + Recruits Board)
 // ─────────────────────────────────────────────────────────
 
 async function loadIntelPage() {
   const container = document.getElementById('intel-content');
 
-  // Render shell immediately
   container.innerHTML = `
     <div class="deployment-banner">
       <div>
@@ -24,9 +22,7 @@ async function loadIntelPage() {
             <div class="card-title">CONFIRMED INTEL</div>
             <div class="dot dot-gold"></div>
           </div>
-          <div style="text-align:center;padding:1rem 0;">
-            <span class="spinner"></span>
-          </div>
+          <div style="text-align:center;padding:1rem 0;"><span class="spinner"></span></div>
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:1rem;">
@@ -35,9 +31,7 @@ async function loadIntelPage() {
             <div class="card-header">
               <div class="card-title">COMMUNITY HYPE METER</div>
             </div>
-            <div style="text-align:center;padding:1rem 0;">
-              <span class="spinner"></span>
-            </div>
+            <div style="text-align:center;padding:1rem 0;"><span class="spinner"></span></div>
           </div>
         </div>
         <div id="recruits-wrap">
@@ -46,9 +40,7 @@ async function loadIntelPage() {
               <div class="card-title">ENLISTED OPERATIVES</div>
               <div class="dot dot-olive"></div>
             </div>
-            <div style="text-align:center;padding:1rem 0;">
-              <span class="spinner"></span>
-            </div>
+            <div style="text-align:center;padding:1rem 0;"><span class="spinner"></span></div>
           </div>
         </div>
       </div>
@@ -56,7 +48,6 @@ async function loadIntelPage() {
 
   renderCountdown('countdown-display');
 
-  // Load intel + hype + recruits in parallel
   const [intelRes, hypeRes, userHypeRes, recruitsRes] = await Promise.all([
     xhrGet('intel_posts', 'select=*&order=created_at.desc'),
     xhrGet('hype_aggregate', 'select=*'),
@@ -70,18 +61,17 @@ async function loadIntelPage() {
   renderRecruits(recruitsRes.data || []);
 }
 
-// ── Urgent alerts (red banner) ────────────────────────────
+// ── Urgent alerts ─────────────────────────────────────────
 
 function renderUrgentAlerts(posts) {
   const container = document.getElementById('urgent-alerts');
   const urgent = posts.filter(p => p.status === 'urgent');
   if (!urgent.length) { container.innerHTML = ''; return; }
-
   container.innerHTML = urgent.map(p => `
     <div class="alert-banner" style="margin-bottom:0.5rem;">
       <span class="dot dot-red"></span>
       <span class="alert-tag blink">URGENT INTEL</span>
-      <span class="alert-text">${escHtml(p.title)}</span>
+      <span class="alert-text">${esc(p.title)}</span>
     </div>`).join('');
 }
 
@@ -89,9 +79,8 @@ function renderUrgentAlerts(posts) {
 
 function renderConfirmedIntel(posts) {
   const container = document.getElementById('confirmed-intel-wrap');
-  const confirmed = posts.filter(p => p.status !== 'urgent' || true); // show all non-debunked
 
-  if (!confirmed.length) {
+  if (!posts.length) {
     container.innerHTML = `
       <div class="card card-top">
         <div class="card-header">
@@ -106,7 +95,7 @@ function renderConfirmedIntel(posts) {
     return;
   }
 
-  const items = confirmed.map(p => {
+  const items = posts.map(p => {
     const date = new Date(p.created_at).toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric'
     });
@@ -116,11 +105,10 @@ function renderConfirmedIntel(posts) {
       <div class="intel-item">
         <div><span class="badge ${badgeClass}">${badgeText}</span></div>
         <div style="flex:1;">
-          <div class="intel-text">${escHtml(p.title)}</div>
-          ${p.body ? `<div class="intel-body">${escHtml(p.body)}</div>` : ''}
+          <div class="intel-text">${esc(p.title)}</div>
+          ${p.body ? `<div class="intel-body">${esc(p.body)}</div>` : ''}
           <div class="intel-source">
-            ${p.source_name ? `SRC // ${escHtml(p.source_name).toUpperCase()}` : ''}
-            ${p.source_name ? ' — ' : ''}
+            ${p.source_name ? `SRC // ${esc(p.source_name).toUpperCase()} — ` : ''}
             ${date.toUpperCase()}
           </div>
         </div>
@@ -198,7 +186,6 @@ function renderHypeMeter(aggregate, userVote) {
       </div>
     </div>`;
 
-  // Live slider preview
   const slider = document.getElementById('hype-slider');
   if (slider) {
     slider.addEventListener('input', function() {
@@ -212,18 +199,14 @@ async function submitHypeVote() {
   if (!profile) return;
   const score = parseInt(document.getElementById('hype-slider').value, 10);
 
-  // Upsert — one vote per user
   const { error } = await xhrRequest('POST', `${API_BASE}/hype_votes`, {
-    user_id: profile.id,
-    score
+    user_id: profile.id, score
   });
 
   if (error) {
-    // Try patch if insert failed (already voted)
     await xhrPatch('hype_votes', `user_id=eq.${profile.id}`, { score });
   }
 
-  // Reload hype data
   const hypeRes = await xhrGet('hype_aggregate', 'select=*');
   const agg = hypeRes.data?.[0] || { hype_score: score, total_votes: 1 };
   currentHypeScore = agg.hype_score;
@@ -272,10 +255,10 @@ async function renderRecruits(profiles) {
                       border:1px solid var(--navy-border);display:flex;align-items:center;
                       justify-content:center;font-family:var(--font-mil);font-size:9px;
                       color:var(--gold);flex-shrink:0;">
-            ${escHtml(p.callsign || '?').charAt(0)}
+            ${esc(p.callsign || '?').charAt(0)}
           </div>
           <span style="font-family:var(--font-mono);font-size:10px;color:var(--bone);
-                       letter-spacing:0.5px;">${escHtml(p.callsign || 'UNKNOWN')}</span>
+                       letter-spacing:0.5px;">${esc(p.callsign || 'UNKNOWN')}</span>
           ${roleBadge}
         </div>
         <span style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);">
@@ -307,10 +290,14 @@ async function renderRecruits(profiles) {
     </div>`;
 }
 
-// ── Helpers ───────────────────────────────────────────────
+// ── Helper ────────────────────────────────────────────────
 
-function escHtml(str) {
+function esc(str) {
   if (!str) return '';
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-            .replace(/"/g,'&quot;').replace(/'''g,'&#039;');
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
