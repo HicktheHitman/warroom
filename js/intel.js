@@ -29,13 +29,26 @@ async function loadIntelPage() {
           </div>
         </div>
       </div>
-      <div id="hype-wrap">
-        <div class="card card-top">
-          <div class="card-header">
-            <div class="card-title">COMMUNITY HYPE METER</div>
+      <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div id="hype-wrap">
+          <div class="card card-top">
+            <div class="card-header">
+              <div class="card-title">COMMUNITY HYPE METER</div>
+            </div>
+            <div style="text-align:center;padding:1rem 0;">
+              <span class="spinner"></span>
+            </div>
           </div>
-          <div style="text-align:center;padding:1rem 0;">
-            <span class="spinner"></span>
+        </div>
+        <div id="recruits-wrap">
+          <div class="card card-top-olive">
+            <div class="card-header">
+              <div class="card-title">ENLISTED OPERATIVES</div>
+              <div class="dot dot-olive"></div>
+            </div>
+            <div style="text-align:center;padding:1rem 0;">
+              <span class="spinner"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -43,16 +56,18 @@ async function loadIntelPage() {
 
   renderCountdown('countdown-display');
 
-  // Load intel + hype in parallel
-  const [intelRes, hypeRes, userHypeRes] = await Promise.all([
+  // Load intel + hype + recruits in parallel
+  const [intelRes, hypeRes, userHypeRes, recruitsRes] = await Promise.all([
     xhrGet('intel_posts', 'select=*&order=created_at.desc'),
     xhrGet('hype_aggregate', 'select=*'),
-    getCachedProfile() ? xhrGet('hype_votes', `select=score&user_id=eq.${getCachedProfile().id}`) : Promise.resolve({ data: [] })
+    getCachedProfile() ? xhrGet('hype_votes', `select=score&user_id=eq.${getCachedProfile().id}`) : Promise.resolve({ data: [] }),
+    xhrGet('profiles', 'select=callsign,role,created_at&order=created_at.desc&limit=8')
   ]);
 
   renderUrgentAlerts(intelRes.data || []);
   renderConfirmedIntel(intelRes.data || []);
   renderHypeMeter(hypeRes.data?.[0] || { hype_score: 0, total_votes: 0 }, userHypeRes.data?.[0]?.score || 0);
+  renderRecruits(recruitsRes.data || []);
 }
 
 // ── Urgent alerts (red banner) ────────────────────────────
