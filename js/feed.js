@@ -14,7 +14,6 @@ async function loadReportsPage() {
     <div id="report-modal-overlay" class="modal-overlay hidden"
          onclick="closeReportModal(event)"></div>`;
 
-  // File a report button — fixed at top
   const profile = getCachedProfile();
   document.getElementById('reports-list').insertAdjacentHTML('beforebegin', `
     <div style="display:flex;align-items:center;justify-content:space-between;
@@ -78,36 +77,25 @@ async function fetchReports() {
           letter-spacing:2px;padding:4px 0;border-bottom:1px solid var(--navy-border);
           margin-bottom:8px;">📌 PINNED BY COMMAND</div>` : ''}
         <div style="display:flex;align-items:flex-start;gap:10px;">
-
-          <!-- Avatar -->
           <div style="width:36px;height:36px;background:var(--navy-border);
                       border:1px solid var(--navy-border);display:flex;align-items:center;
                       justify-content:center;font-family:var(--font-mil);font-size:13px;
                       color:var(--gold);flex-shrink:0;">
             ${escHtml(r.callsign || '?').charAt(0)}
           </div>
-
           <div style="flex:1;min-width:0;">
-            <!-- Header -->
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;
-                        flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
               <span style="font-family:var(--font-mono);font-size:10px;color:var(--gold);
                            letter-spacing:1px;">${escHtml(r.callsign || 'UNKNOWN')}</span>
               ${roleBadge}
               <span style="font-family:var(--font-mono);font-size:9px;
                            color:var(--bone-dim);">${timeAgo}</span>
             </div>
-
-            <!-- Body -->
             <div style="font-family:var(--font-body);font-size:14px;color:var(--bone);
                         line-height:1.5;margin-bottom:${embed ? '8px' : '0'};">
               ${escHtml(r.body)}
             </div>
-
-            <!-- Embed -->
             ${embed}
-
-            <!-- Actions -->
             ${canDelete ? `
             <div style="margin-top:8px;display:flex;gap:6px;">
               ${isAdmin ? `<button class="btn btn-ghost" style="font-size:8px;padding:2px 6px;
@@ -126,20 +114,29 @@ async function fetchReports() {
 
 // ── Embed builder ─────────────────────────────────────────
 
-if (type === 'youtube') {
-  const videoId = extractYoutubeId(url);
-  if (!videoId) return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
-    style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
-    VIEW SOURCE ↗</a>`;
-  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;
-                      background:var(--navy);margin-top:8px;">
-    <iframe src="https://www.youtube.com/embed/${videoId}"
-            style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
-            allowfullscreen loading="lazy"></iframe>
-  </div>`;
-} 
+function buildEmbed(url, type) {
+  if (!url) return '';
 
-if (type === 'tiktok' || type === 'twitter') {
+  if (!type) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
+    else if (url.includes('tiktok.com')) type = 'tiktok';
+    else if (url.includes('twitter.com') || url.includes('x.com')) type = 'twitter';
+  }
+
+  if (type === 'youtube') {
+    const videoId = extractYoutubeId(url);
+    if (!videoId) return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
+      style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
+      VIEW SOURCE ↗</a>`;
+    return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;
+                        background:var(--navy);margin-top:8px;">
+      <iframe src="https://www.youtube.com/embed/${videoId}"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+              allowfullscreen loading="lazy"></iframe>
+    </div>`;
+  }
+
+  if (type === 'tiktok' || type === 'twitter') {
     return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
       style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;
              font-family:var(--font-mono);font-size:10px;color:var(--gold);
@@ -149,7 +146,6 @@ if (type === 'tiktok' || type === 'twitter') {
     </a>`;
   }
 
-  // Generic link
   return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
     style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
     VIEW SOURCE ↗</a>`;
@@ -162,43 +158,12 @@ function extractYoutubeId(url) {
     /youtube\.com\/embed\/([^?&]+)/,
     /youtube\.com\/shorts\/([^?&]+)/
   ];
-
   for (const p of patterns) {
     const m = url.match(p);
     if (m) return m[1];
   }
   return null;
 }
-
-function extractYoutubeId(url) {
-  const patterns = [
-    /youtu\.be\/([^?&]+)/,
-    /youtube\.com\/watch\?v=([^&]+)/,
-    /youtube\.com\/embed\/([^?&]+)/,
-    /youtube\.com\/shorts\/([^?&]+)/
-  ];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
-  }
-  return null;
-}
-
-function ytFallbackCard(url) {
-  return `
-    <a href="${url}" target="_blank" rel="noopener"
-       style="display:flex;align-items:center;gap:12px;padding:14px 16px;
-              background:var(--navy);border:1px solid var(--navy-border);
-              text-decoration:none;margin-top:8px;">
-      <div style="width:40px;height:40px;background:#FF0000;display:flex;
-                  align-items:center;justify-content:center;flex-shrink:0;">
-        <span style="color:#fff;font-size:16px;">▶</span>
-      </div>
-      <div>
-        <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);
-                    letter-spacing:1px;margin-bottom:3px;">WATCH ON YOUTUBE</div>
-        <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
-
 
 // ── File a report modal ───────────────────────────────────
 
@@ -209,7 +174,6 @@ function showFileReportModal() {
     <div class="modal" onclick="event.stopPropagation()">
       <div class="modal-title">FILE A FIELD REPORT</div>
       <div class="error-msg" id="report-submit-error"></div>
-
       <div class="field-group">
         <label class="field-label" for="report-body">REPORT</label>
         <textarea class="mil-input" id="report-body" rows="4" maxlength="1000"
@@ -217,7 +181,6 @@ function showFileReportModal() {
         <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
                     margin-top:4px;text-align:right;" id="report-char-count">0 / 1000</div>
       </div>
-
       <div class="field-group">
         <label class="field-label" for="report-embed">EMBED LINK (OPTIONAL)</label>
         <input class="mil-input" type="url" id="report-embed"
@@ -227,7 +190,6 @@ function showFileReportModal() {
           YOUTUBE LINKS EMBED INLINE — TIKTOK/X SHOW AS LINK
         </div>
       </div>
-
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeReportModal()">CANCEL</button>
         <button class="btn btn-primary" id="btn-submit-report"
@@ -237,7 +199,6 @@ function showFileReportModal() {
 
   overlay.classList.remove('hidden');
 
-  // Char counter
   const ta = document.getElementById('report-body');
   const cc = document.getElementById('report-char-count');
   ta.addEventListener('input', () => {
@@ -277,7 +238,6 @@ async function submitReport() {
     return;
   }
 
-  // Detect embed type
   let embedType = null;
   if (embedUrl) {
     if (embedUrl.includes('youtube.com') || embedUrl.includes('youtu.be')) embedType = 'youtube';
