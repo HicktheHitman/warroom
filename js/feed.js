@@ -131,33 +131,11 @@ if (type === 'youtube') {
   if (!videoId) return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
     style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
     VIEW SOURCE ↗</a>`;
-
-  const containerId = 'yt-' + videoId + '-' + Math.random().toString(36).slice(2);
-
-  // Check embeddability via oEmbed then render
-  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
-    .then(res => {
-      const el = document.getElementById(containerId);
-      if (!el) return;
-      if (res.ok) {
-        el.innerHTML = `
-          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:var(--navy);">
-            <iframe src="https://www.youtube.com/embed/${videoId}"
-              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
-              allowfullscreen loading="lazy"></iframe>
-          </div>`;
-      } else {
-        el.innerHTML = ytFallbackCard(url);
-      }
-    })
-    .catch(() => {
-      const el = document.getElementById(containerId);
-      if (el) el.innerHTML = ytFallbackCard(url);
-    });
-
-  return `<div id="${containerId}" style="margin-top:8px;">
-    <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
-                padding:8px 0;letter-spacing:1px;">LOADING EMBED...</div>
+  return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;
+                      background:var(--navy);margin-top:8px;">
+    <iframe src="https://www.youtube.com/embed/${videoId}"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+            allowfullscreen loading="lazy"></iframe>
   </div>`;
 } 
 
