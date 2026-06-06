@@ -139,6 +139,16 @@ if (type === 'youtube') {
   </div>`;
 } 
 
+if (type === 'tiktok' || type === 'twitter') {
+    return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
+      style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;
+             font-family:var(--font-mono);font-size:10px;color:var(--gold);
+             border:1px solid var(--gold-dim);padding:4px 10px;
+             background:var(--gold-bg);">
+      ${type === 'tiktok' ? '▶ VIEW ON TIKTOK' : '▶ VIEW ON X'} ↗
+    </a>`;
+  }
+
   // Generic link
   return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
     style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
