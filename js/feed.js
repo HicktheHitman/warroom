@@ -126,43 +126,60 @@ async function fetchReports() {
 
 // ── Embed builder ─────────────────────────────────────────
 
-function buildEmbed(url, type) {
-  if (!url) return '';
+if (type === 'youtube') {
+  const videoId = extractYoutubeId(url);
+  if (!videoId) return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
+    style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
+    VIEW SOURCE ↗</a>`;
 
-  // Detect type from URL if not set
-  if (!type) {
-    if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
-    else if (url.includes('tiktok.com')) type = 'tiktok';
-    else if (url.includes('twitter.com') || url.includes('x.com')) type = 'twitter';
-  }
+  const containerId = 'yt-' + videoId + '-' + Math.random().toString(36).slice(2);
 
-  if (type === 'youtube') {
-    const videoId = extractYoutubeId(url);
-    if (!videoId) return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
-      style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
-      VIEW SOURCE ↗</a>`;
-    return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;
-                        background:var(--navy);margin-top:8px;">
-      <iframe src="https://www.youtube.com/embed/${videoId}"
+  // Check embeddability via oEmbed then render
+  fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`)
+    .then(res => {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      if (res.ok) {
+        el.innerHTML = `
+          <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;background:var(--navy);">
+            <iframe src="https://www.youtube.com/embed/${videoId}"
               style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
               allowfullscreen loading="lazy"></iframe>
-    </div>`;
-  }
+          </div>`;
+      } else {
+        el.innerHTML = ytFallbackCard(url);
+      }
+    })
+    .catch(() => {
+      const el = document.getElementById(containerId);
+      if (el) el.innerHTML = ytFallbackCard(url);
+    });
 
-  if (type === 'tiktok' || type === 'twitter') {
-    return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
-      style="display:inline-flex;align-items:center;gap:6px;margin-top:6px;
-             font-family:var(--font-mono);font-size:10px;color:var(--gold);
-             border:1px solid var(--gold-dim);padding:4px 10px;
-             background:var(--gold-bg);">
-      ${type === 'tiktok' ? '▶ VIEW ON TIKTOK' : '▶ VIEW ON X'} ↗
-    </a>`;
-  }
+  return `<div id="${containerId}" style="margin-top:8px;">
+    <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                padding:8px 0;letter-spacing:1px;">LOADING EMBED...</div>
+  </div>`;
+} 
 
   // Generic link
   return `<a href="${escHtml(url)}" target="_blank" rel="noopener"
     style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
     VIEW SOURCE ↗</a>`;
+}
+
+function extractYoutubeId(url) {
+  const patterns = [
+    /youtu\.be\/([^?&]+)/,
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtube\.com\/embed\/([^?&]+)/,
+    /youtube\.com\/shorts\/([^?&]+)/
+  ];
+
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
 }
 
 function extractYoutubeId(url) {
@@ -178,6 +195,22 @@ function extractYoutubeId(url) {
   }
   return null;
 }
+
+function ytFallbackCard(url) {
+  return `
+    <a href="${url}" target="_blank" rel="noopener"
+       style="display:flex;align-items:center;gap:12px;padding:14px 16px;
+              background:var(--navy);border:1px solid var(--navy-border);
+              text-decoration:none;margin-top:8px;">
+      <div style="width:40px;height:40px;background:#FF0000;display:flex;
+                  align-items:center;justify-content:center;flex-shrink:0;">
+        <span style="color:#fff;font-size:16px;">▶</span>
+      </div>
+      <div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);
+                    letter-spacing:1px;margin-bottom:3px;">WATCH ON YOUTUBE</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+
 
 // ── File a report modal ───────────────────────────────────
 
