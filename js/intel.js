@@ -120,6 +120,8 @@ function renderConfirmedIntel(posts) {
                 : `SRC // ${esc(p.source_name).toUpperCase()} — ${date.toUpperCase()}`
               : date.toUpperCase()}
           </div>
+        </div>
+      </div>`;
   }).join('');
 
   container.innerHTML = `
