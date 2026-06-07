@@ -107,12 +107,19 @@ function renderConfirmedIntel(posts) {
         <div style="flex:1;">
           <div class="intel-text">${esc(p.title)}</div>
           ${p.body ? `<div class="intel-body">${esc(p.body)}</div>` : ''}
-          <div class="intel-source">
-            ${p.source_name ? `SRC // ${esc(p.source_name).toUpperCase()} — ` : ''}
-            ${date.toUpperCase()}
+          <<div class="intel-source">
+            ${p.source_name
+              ? p.source_url
+                ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener"
+                    style="color:var(--bone-dim);text-decoration:none;letter-spacing:1px;
+                           font-family:var(--font-mono);font-size:9px;"
+                    onmouseover="this.style.color='var(--gold)'"
+                    onmouseout="this.style.color='var(--bone-dim)'">
+                    SRC // ${esc(p.source_name).toUpperCase()} — ${date.toUpperCase()}
+                  </a>`
+                : `SRC // ${esc(p.source_name).toUpperCase()} — ${date.toUpperCase()}`
+              : date.toUpperCase()}
           </div>
-        </div>
-      </div>`;
   }).join('');
 
   container.innerHTML = `
