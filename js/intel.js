@@ -107,7 +107,7 @@ function renderConfirmedIntel(posts) {
         <div style="flex:1;">
           <div class="intel-text">${esc(p.title)}</div>
           ${p.body ? `<div class="intel-body">${esc(p.body)}</div>` : ''}
-          <<div class="intel-source">
+          <div class="intel-source">
             ${p.source_name
               ? p.source_url
                 ? `<a href="${esc(p.source_url)}" target="_blank" rel="noopener"
