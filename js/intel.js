@@ -63,19 +63,6 @@ async function loadIntelPage() {
   renderTipCommand();
 }
 
-// ── Urgent alerts ─────────────────────────────────────────
-
-function renderUrgentAlerts(posts) {
-  const container = document.getElementById('urgent-alerts');
-  const urgent = posts.filter(p => p.status === 'urgent');
-  if (!urgent.length) { container.innerHTML = ''; return; }
-  container.innerHTML = urgent.map(p => `
-    <div class="alert-banner" style="margin-bottom:0.5rem;">
-      <span class="dot dot-red"></span>
-      <span class="alert-tag blink">URGENT INTEL</span>
-      <span class="alert-text">${esc(p.title)}</span>
-    </div>`).join('');
-
 // ── Tip Command ───────────────────────────────────────────
 
 function renderTipCommand() {
@@ -212,6 +199,19 @@ async function submitTip() {
   closeTipModal();
   showToast('TIP TRANSMITTED — COMMAND WILL REVIEW', 'success');
 }
+
+// ── Urgent alerts ─────────────────────────────────────────
+
+function renderUrgentAlerts(posts) {
+  const container = document.getElementById('urgent-alerts');
+  const urgent = posts.filter(p => p.status === 'urgent');
+  if (!urgent.length) { container.innerHTML = ''; return; }
+  container.innerHTML = urgent.map(p => `
+    <div class="alert-banner" style="margin-bottom:0.5rem;">
+      <span class="dot dot-red"></span>
+      <span class="alert-tag blink">URGENT INTEL</span>
+      <span class="alert-text">${esc(p.title)}</span>
+    </div>`).join('');
 }
 
 // ── Confirmed Intel Board ─────────────────────────────────
