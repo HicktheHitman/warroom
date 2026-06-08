@@ -187,7 +187,7 @@ async function handleSignOut() {
 
 // ── OAuth callback — captures token from URL hash ────────
 
-function handleOAuthCallback() {
+async function handleOAuthCallback() {
   const hash = window.location.hash;
   if (!hash) return;
 
@@ -197,12 +197,33 @@ function handleOAuthCallback() {
   const expiresIn    = parseInt(params.get('expires_in') || '3600', 10);
 
   if (accessToken) {
-    saveSession({
-      access_token:  accessToken,
-      refresh_token: refreshToken,
-      expires_in:    expiresIn,
-      expires_at:    Math.floor(Date.now() / 1000) + expiresIn
-    });
+    // Fetch user info to store user ID in session
+    try {
+      const userRes = await fetch(`${AUTH_BASE}/user`, {
+        headers: {
+          'apikey': WARROOM_CONFIG.supabaseAnonKey,
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      const userData = await userRes.json();
+      saveSession({
+        access_token:  accessToken,
+        refresh_token: refreshToken,
+        expires_in:    expiresIn,
+        expires_at:    Math.floor(Date.now() / 1000) + expiresIn,
+        user: { id: userData.id }
+      });
+    } catch (e) {
+      saveSession({
+        access_token:  accessToken,
+        refresh_token: refreshToken,
+        expires_in:    expiresIn,
+        expires_at:    Math.floor(Date.now() / 1000) + expiresIn
+      });
+    }
+
+    // Clear cached profile so fresh one loads for this user
+    localStorage.removeItem('warroom_profile');
     history.replaceState(null, '', window.location.pathname);
   }
 }
