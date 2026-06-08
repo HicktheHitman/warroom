@@ -31,11 +31,8 @@ async function fetchEpisodes() {
 }
 
 function renderEpisodes(episodes) {
-  ${isAdmin ? `
-  <button class="btn btn-ghost" style="font-size:8px;padding:2px 8px;"
-    onclick="showAddEpisodeModal()">+ ADD</button>
-  <button id="btn-rss-sync" class="btn btn-ghost" style="font-size:8px;padding:2px 8px;color:var(--olive-glow);"
-    onclick="syncFromRSS()">SYNC RSS</button>` : ''}
+  const container = document.getElementById('fragcast-episodes');
+  const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'command');
 
   if (!episodes.length) {
     container.innerHTML = `
@@ -56,9 +53,8 @@ function renderEpisodes(episodes) {
     return;
   }
 
-  // Latest episode gets featured treatment
-  const latest   = episodes[0];
-  const rest      = episodes.slice(1);
+  const latest = episodes[0];
+  const rest   = episodes.slice(1);
 
   container.innerHTML = `
     <div class="card card-top" style="margin-bottom:1rem;">
@@ -69,8 +65,11 @@ function renderEpisodes(episodes) {
           <div style="font-family:var(--font-mono);font-size:9px;color:var(--olive-glow);">
             NEW EPISODES WEEKLY
           </div>
-          ${isAdmin ? `<button class="btn btn-ghost" style="font-size:8px;padding:2px 8px;"
-            onclick="showAddEpisodeModal()">+ ADD</button>` : ''}
+          ${isAdmin ? `
+          <button class="btn btn-ghost" style="font-size:8px;padding:2px 8px;"
+            onclick="showAddEpisodeModal()">+ ADD</button>
+          <button id="btn-rss-sync" class="btn btn-ghost" style="font-size:8px;padding:2px 8px;color:var(--olive-glow);"
+            onclick="syncFromRSS()">SYNC RSS</button>` : ''}
         </div>
       </div>
 
@@ -199,10 +198,85 @@ function renderFragcastSidebar() {
     </div>`;
 }
 
+// ── RSS Sync (admin only) ─────────────────────────────────
+
+async function syncFromRSS() {
+  const btn = document.getElementById('btn-rss-sync');
+  if (btn) { btn.disabled = true; btn.textContent = 'SYNCING...'; }
+
+  try {
+    const rssUrl = 'https://anchor.fm/s/1131b36cc/podcast/rss';
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+
+    const res = await fetch(proxyUrl);
+    const json = await res.json();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(json.contents, 'text/xml');
+    const items = Array.from(xml.querySelectorAll('item'));
+
+    if (!items.length) {
+      showToast('NO EPISODES FOUND IN RSS', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'SYNC RSS'; }
+      return;
+    }
+
+    const { data: existing } = await xhrGet('fragcast_episodes', 'select=episode_num');
+    const existingNums = new Set((existing || []).map(e => e.episode_num));
+
+    let newCount = 0;
+    const totalItems = items.length;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const title = item.querySelector('title')?.textContent?.trim() || 'UNTITLED';
+      const description = item.querySelector('description')?.textContent?.replace(/<[^>]*>/g, '').trim() || null;
+      const pubDate = item.querySelector('pubDate')?.textContent?.trim();
+      const episodeNum = totalItems - i;
+
+      if (existingNums.has(episodeNum)) continue;
+
+      const guid = item.querySelector('guid')?.textContent?.trim() || null;
+      const spotifyUrl = guid && guid.includes('spotify') ? guid : null;
+
+      const durationSecs = item.querySelector('duration')?.textContent?.trim();
+      let duration = null;
+      if (durationSecs) {
+        const secs = parseInt(durationSecs);
+        if (!isNaN(secs)) {
+          const h = Math.floor(secs / 3600);
+          const m = Math.floor((secs % 3600) / 60);
+          duration = h > 0 ? `${h}H ${m}M` : `${m}M`;
+        } else {
+          duration = durationSecs;
+        }
+      }
+
+      await xhrPost('fragcast_episodes', {
+        episode_num:  episodeNum,
+        title,
+        description:  description ? description.substring(0, 500) : null,
+        duration,
+        embed_url:    spotifyUrl,
+        published_at: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString()
+      });
+
+      newCount++;
+    }
+
+    showToast(newCount > 0 ? `${newCount} NEW EPISODE(S) SYNCED` : 'ALREADY UP TO DATE', 'success');
+    await fetchEpisodes();
+
+  } catch (err) {
+    showToast('RSS SYNC FAILED — CHECK CONSOLE', 'error');
+    console.error('RSS sync error:', err);
+  }
+
+  if (btn) { btn.disabled = false; btn.textContent = 'SYNC RSS'; }
+}
+
 // ── Add episode modal (admin only) ───────────────────────
 
 function showAddEpisodeModal() {
-  // Inject modal into page
   const existing = document.getElementById('fragcast-modal-overlay');
   if (existing) existing.remove();
 
@@ -305,48 +379,6 @@ async function deleteEpisode(id) {
   showToast('EPISODE DELETED', 'default');
   await fetchEpisodes();
 }
-
-// ── RSS Sync (admin only) ─────────────────────────────────
-
-async function syncFromRSS() {
-  const btn = document.getElementById('btn-rss-sync');
-  if (btn) { btn.disabled = true; btn.textContent = 'SYNCING...'; }
-
-  try {
-    const rssUrl = 'https://anchor.fm/s/1131b36cc/podcast/rss';
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
-
-    const res = await fetch(proxyUrl);
-    const json = await res.json();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(json.contents, 'text/xml');
-    const items = Array.from(xml.querySelectorAll('item'));
-
-    if (!items.length) {
-      showToast('NO EPISODES FOUND IN RSS', 'error');
-      if (btn) { btn.disabled = false; btn.textContent = 'SYNC RSS'; }
-      return;
-    }
-
-    // Get existing episode numbers to avoid duplicates
-    const { data: existing } = await xhrGet('fragcast_episodes', 'select=episode_num');
-    const existingNums = new Set((existing || []).map(e => e.episode_num));
-
-    let newCount = 0;
-    const totalItems = items.length;
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      const title = item.querySelector('title')?.textContent?.trim() || 'UNTITLED';
-      const description = item.querySelector('description')?.textContent?.replace(/<[^>]*>/g, '').trim() || null;
-      const pubDate = item.querySelector('pubDate')?.textContent?.trim();
-      const episodeNum = totalItems - i; // newest = highest number
-
-      // Skip if already exists
-      if (existingNums.has(episodeNum)) continue;
-
-      // Get Spotify link from guid or link
-      const guid = item.querySelector('guid')?.textContent?.trim() || n
 
 // ── Helpers ───────────────────────────────────────────────
 
