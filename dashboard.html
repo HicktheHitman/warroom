@@ -91,7 +91,7 @@
 
   window.addEventListener('DOMContentLoaded', async function () {
     // Catch Google OAuth token in URL hash
-    handleOAuthCallback();
+    await handleOAuthCallback();
 
     // Guard — redirect if not logged in
     if (!requireAuth()) return;
