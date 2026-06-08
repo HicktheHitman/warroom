@@ -97,7 +97,10 @@
     if (!requireAuth()) return;
 
     // Load profile from DB
-    currentUser = await fetchCurrentUser();
+  currentUser = await fetchCurrentUser();
+  await checkCallsignSetup();
+
+  // Fallback: pull callsign from session user_metadata if DB fetch failed
 
     // Fallback: pull callsign from session user_metadata if DB fetch failed
     if (!currentUser) {

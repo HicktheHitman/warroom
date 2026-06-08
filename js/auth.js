@@ -359,6 +359,122 @@ function showForm(name) {
   if (target) target.classList.remove('hidden');
 }
 
+// ── First-login callsign setup ────────────────────────────
+
+async function checkCallsignSetup() {
+  const profile = await fetchCurrentUser();
+  if (!profile) return;
+
+  // Only intercept if callsign matches OPERATIVE_ pattern
+  if (!profile.callsign || !profile.callsign.startsWith('OPERATIVE_')) return;
+
+  // Build full-screen overlay
+  const overlay = document.createElement('div');
+  overlay.id = 'callsign-setup-overlay';
+  overlay.style.cssText = `
+    position:fixed;top:0;left:0;width:100%;height:100%;
+    background:var(--navy-deep);z-index:9999;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);`;
+
+  overlay.innerHTML = `
+    <div style="width:100%;max-width:480px;padding:2rem;border:1px solid var(--gold-dim);
+                background:var(--navy);margin:1rem;">
+      <div style="font-size:9px;color:var(--gold);letter-spacing:3px;
+                  margin-bottom:0.5rem;">// WARROOM SECURITY PROTOCOL</div>
+      <div style="font-family:var(--font-mil);font-size:24px;color:var(--bone);
+                  letter-spacing:2px;margin-bottom:0.5rem;">CALLSIGN REQUIRED</div>
+      <div style="font-size:10px;color:var(--bone-dim);letter-spacing:1px;
+                  line-height:1.6;margin-bottom:1.5rem;border-top:1px solid var(--navy-border);
+                  padding-top:1rem;">
+        OPERATIVE — YOU HAVE BEEN GRANTED CLEARANCE BUT HAVE NOT BEEN ASSIGNED A CALLSIGN.<br><br>
+        DESIGNATE YOUR CALLSIGN BEFORE ACCESSING WARROOM INTEL.
+      </div>
+
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:9px;color:var(--bone-dim);letter-spacing:2px;
+                      display:block;margin-bottom:6px;">CALLSIGN DESIGNATION</label>
+        <input id="callsign-input" class="mil-input" type="text"
+               maxlength="24" placeholder="ENTER YOUR CALLSIGN"
+               style="width:100%;box-sizing:border-box;text-transform:uppercase;"
+               oninput="this.value=this.value.toUpperCase()">
+        <div id="callsign-rules" style="font-size:9px;color:var(--bone-dim);
+                      margin-top:4px;letter-spacing:0.5px;">
+          LETTERS, NUMBERS, _ AND - ONLY. 3–24 CHARACTERS.
+        </div>
+        <div id="callsign-error" style="font-size:9px;color:var(--red);
+                      margin-top:4px;letter-spacing:0.5px;display:none;"></div>
+      </div>
+
+      <button id="btn-confirm-callsign" class="btn btn-primary"
+              style="width:100%;padding:12px;font-size:10px;letter-spacing:2px;"
+              onclick="confirmCallsign()">
+        CONFIRM DESIGNATION
+      </button>
+    </div>`;
+
+  document.body.appendChild(overlay);
+
+  // Focus input
+  setTimeout(() => {
+    const input = document.getElementById('callsign-input');
+    if (input) input.focus();
+  }, 100);
+}
+
+async function confirmCallsign() {
+  const input  = document.getElementById('callsign-input');
+  const errEl  = document.getElementById('callsign-error');
+  const btn    = document.getElementById('btn-confirm-callsign');
+  const callsign = (input.value || '').trim().toUpperCase();
+
+  errEl.style.display = 'none';
+
+  // Validate
+  if (!callsign || callsign.length < 3) {
+    errEl.textContent = 'CALLSIGN MUST BE AT LEAST 3 CHARACTERS';
+    errEl.style.display = 'block'; return;
+  }
+  if (callsign.length > 24) {
+    errEl.textContent = 'CALLSIGN MUST BE 24 CHARACTERS OR LESS';
+    errEl.style.display = 'block'; return;
+  }
+  if (!/^[A-Za-z0-9_\-]+$/.test(callsign)) {
+    errEl.textContent = 'LETTERS, NUMBERS, _ AND - ONLY';
+    errEl.style.display = 'block'; return;
+  }
+  if (callsign.startsWith('OPERATIVE_')) {
+    errEl.textContent = 'CHOOSE A UNIQUE CALLSIGN — NOT AN OPERATIVE CODE';
+    errEl.style.display = 'block'; return;
+  }
+
+  setButtonLoading(btn, 'VERIFYING...');
+
+  // Check availability
+  const { data: existing } = await xhrGet(
+    'profiles', `select=id&callsign=eq.${encodeURIComponent(callsign)}`
+  );
+  if (existing && existing.length > 0) {
+    resetButton(btn, 'CONFIRM DESIGNATION');
+    errEl.textContent = `CALLSIGN "${callsign}" IS ALREADY TAKEN`;
+    errEl.style.display = 'block'; return;
+  }
+
+  // Save it
+  const { error } = await updateCallsign(callsign);
+  if (error) {
+    resetButton(btn, 'CONFIRM DESIGNATION');
+    errEl.textContent = 'FAILED TO SAVE — TRY AGAIN';
+    errEl.style.display = 'block'; return;
+  }
+
+  // Remove overlay and reload
+  const overlay = document.getElementById('callsign-setup-overlay');
+  if (overlay) overlay.remove();
+  invalidateProfileCache();
+  showToast('CALLSIGN CONFIRMED — WELCOME TO WARROOM', 'success');
+}
+
 // ── Toast ────────────────────────────────────────────────
 
 function showToast(message, type = 'default') {
