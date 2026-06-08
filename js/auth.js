@@ -213,8 +213,14 @@ async function fetchCurrentUser() {
   const session = getSession();
   if (!session || !session.access_token) return null;
 
+  // Validate cache belongs to current session user
   const cached = getCachedProfile();
-  if (cached) return cached;
+  if (cached) {
+    const sessionUserId = session.user?.id;
+    if (!sessionUserId || cached.id === sessionUserId) return cached;
+    // Cache belongs to different user — clear it
+    localStorage.removeItem(PROFILE_KEY);
+  }
 
   try {
     const res = await fetch(
