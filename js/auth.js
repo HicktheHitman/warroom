@@ -466,8 +466,29 @@ async function confirmCallsign() {
     errEl.style.display = 'block'; return;
   }
 
-  // Save it
-  const { error } = await updateCallsign(callsign);
+    // Save it — create profile if it doesn't exist yet
+  const profile = getCachedProfile();
+  let error;
+  if (profile) {
+    const result = await updateCallsign(callsign);
+    error = result.error;
+  } else {
+    const session = getSession();
+    const userRes = await fetch(`${AUTH_BASE}/user`, {
+      headers: {
+        'apikey': WARROOM_CONFIG.supabaseAnonKey,
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+    const userData = await userRes.json();
+    const { error: insertError } = await xhrPost('profiles', {
+      id: userData.id,
+      callsign,
+      role: 'operative',
+      created_at: new Date().toISOString()
+    });
+    error = insertError;
+  }
   if (error) {
     resetButton(btn, 'CONFIRM DESIGNATION');
     errEl.textContent = 'FAILED TO SAVE — TRY AGAIN';
