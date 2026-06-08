@@ -213,7 +213,6 @@ async function fetchCurrentUser() {
   const session = getSession();
   if (!session || !session.access_token) return null;
 
-  // Return cached profile if available
   const cached = getCachedProfile();
   if (cached) return cached;
 
@@ -230,9 +229,66 @@ async function fetchCurrentUser() {
     );
     if (!res.ok) return null;
     const data = await res.json();
-    if (!data || !data.length) return null;
-    saveProfile(data[0]);
-    return data[0];
+
+    // Profile exists — cache and return it
+    if (data && data.length) {
+      saveProfile(data[0]);
+      return data[0];
+    }
+
+    // No profile found — create one automatically (catches Google OAuth fallthrough)
+    const userRes = await fetch(`${AUTH_BASE}/user`, {
+      headers: {
+        'apikey': WARROOM_CONFIG.supabaseAnonKey,
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+    if (!userRes.ok) return null;
+    const userData = await userRes.json();
+    if (!userData || !userData.id) return null;
+
+    // Count existing profiles to assign next OPERATIVE number
+    const countRes = await fetch(`${API_BASE}/profiles?select=id`, {
+      headers: {
+        'apikey': WARROOM_CONFIG.supabaseAnonKey,
+        'Authorization': `Bearer ${session.access_token}`
+      }
+    });
+    const countData = countRes.ok ? await countRes.json() : [];
+    const count = countData.length || 0;
+    const callsign = 'OPERATIVE_' + String(count + 1).padStart(2, '0');
+
+    // Insert the missing profile
+    await fetch(`${API_BASE}/profiles`, {
+      method: 'POST',
+      headers: {
+        'apikey': WARROOM_CONFIG.supabaseAnonKey,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        id: userData.id,
+        callsign,
+        role: 'operative',
+        created_at: new Date().toISOString()
+      })
+    });
+
+    // Fetch and cache the newly created profile
+    const newRes = await fetch(`${API_BASE}/profiles?select=*&limit=1`, {
+      headers: {
+        'apikey': WARROOM_CONFIG.supabaseAnonKey,
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    if (!newRes.ok) return null;
+    const newData = await newRes.json();
+    if (!newData || !newData.length) return null;
+    saveProfile(newData[0]);
+    return newData[0];
+
   } catch (e) {
     return null;
   }
