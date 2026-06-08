@@ -26,6 +26,7 @@ async function loadIntelPage() {
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:1rem;">
+        <div id="tip-command-wrap"></div>
         <div id="hype-wrap">
           <div class="card card-top">
             <div class="card-header">
@@ -59,6 +60,7 @@ async function loadIntelPage() {
   renderConfirmedIntel(intelRes.data || []);
   renderHypeMeter(hypeRes.data?.[0] || { hype_score: 0, total_votes: 0 }, userHypeRes.data?.[0]?.score || 0);
   renderRecruits(recruitsRes.data || []);
+  renderTipCommand();
 }
 
 // ── Urgent alerts ─────────────────────────────────────────
@@ -73,6 +75,143 @@ function renderUrgentAlerts(posts) {
       <span class="alert-tag blink">URGENT INTEL</span>
       <span class="alert-text">${esc(p.title)}</span>
     </div>`).join('');
+
+// ── Tip Command ───────────────────────────────────────────
+
+function renderTipCommand() {
+  const container = document.getElementById('tip-command-wrap');
+  if (!container) return;
+  const profile = getCachedProfile();
+  if (!profile) return;
+
+  container.innerHTML = `
+    <div class="card card-top" style="margin-bottom:0;">
+      <div class="card-header">
+        <div class="card-title">TIP COMMAND</div>
+        <div class="dot dot-gold"></div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                  letter-spacing:1px;margin-bottom:10px;line-height:1.6;">
+        HAVE INTEL? SUBMIT IT FOR COMMAND REVIEW. VERIFIED TIPS GET FILED TO THE BOARD.
+      </div>
+      <button class="btn btn-primary" style="width:100%;font-size:9px;padding:10px;"
+              onclick="showTipModal()">+ SUBMIT INTEL TIP</button>
+    </div>`;
+}
+
+function showTipModal() {
+  const existing = document.getElementById('tip-modal-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'tip-modal-overlay';
+  overlay.className = 'modal-overlay';
+  overlay.onclick = (e) => { if (e.target.id === 'tip-modal-overlay') closeTipModal(); };
+
+  overlay.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">SUBMIT INTEL TIP</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                  letter-spacing:1px;margin-bottom:1rem;line-height:1.6;">
+        ALL TIPS GO TO COMMAND FOR REVIEW BEFORE POSTING.
+      </div>
+      <div class="error-msg" id="tip-submit-error"></div>
+
+      <div class="field-group">
+        <label class="field-label">INTEL TITLE *</label>
+        <input class="mil-input" type="text" id="tip-title" maxlength="200"
+               placeholder="Brief summary of the intel">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">DETAILS</label>
+        <textarea class="mil-input" id="tip-body" rows="3" maxlength="1000"
+                  placeholder="Additional context, details, or explanation..."></textarea>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">SOURCE NAME</label>
+        <input class="mil-input" type="text" id="tip-source-name" maxlength="100"
+               placeholder="e.g. CharlieIntel, Activision Blog, Leak via Reddit">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">SOURCE URL</label>
+        <input class="mil-input" type="url" id="tip-source-url"
+               placeholder="https://...">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">CONFIDENCE LEVEL</label>
+        <select class="mil-input" id="tip-confidence">
+          <option value="unconfirmed">UNCONFIRMED — Rumor or leak</option>
+          <option value="likely">LIKELY — Multiple sources</option>
+          <option value="confirmed">CONFIRMED — Official source</option>
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeTipModal()">CANCEL</button>
+        <button class="btn btn-primary" id="btn-submit-tip"
+                onclick="submitTip()">TRANSMIT TIP</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  setTimeout(() => overlay.classList.add('visible'), 10);
+}
+
+function closeTipModal() {
+  const overlay = document.getElementById('tip-modal-overlay');
+  if (overlay) overlay.remove();
+}
+
+async function submitTip() {
+  const title      = document.getElementById('tip-title').value.trim();
+  const body       = document.getElementById('tip-body').value.trim();
+  const sourceName = document.getElementById('tip-source-name').value.trim();
+  const sourceUrl  = document.getElementById('tip-source-url').value.trim();
+  const confidence = document.getElementById('tip-confidence').value;
+  const errEl      = document.getElementById('tip-submit-error');
+  const btn        = document.getElementById('btn-submit-tip');
+  const profile    = getCachedProfile();
+
+  errEl.classList.remove('visible');
+
+  if (!title) {
+    errEl.textContent = 'INTEL TITLE IS REQUIRED';
+    errEl.classList.add('visible');
+    return;
+  }
+  if (!profile) {
+    errEl.textContent = 'YOU MUST BE AUTHENTICATED';
+    errEl.classList.add('visible');
+    return;
+  }
+
+  setButtonLoading(btn, 'TRANSMITTING...');
+
+  const { error } = await xhrPost('intel_tips', {
+    user_id:     profile.id,
+    callsign:    profile.callsign,
+    title,
+    body:        body || null,
+    source_name: sourceName || null,
+    source_url:  sourceUrl || null,
+    confidence
+  });
+
+  resetButton(btn, 'TRANSMIT TIP');
+
+  if (error) {
+    errEl.textContent = 'FAILED TO SUBMIT: ' + error;
+    errEl.classList.add('visible');
+    return;
+  }
+
+  closeTipModal();
+  showToast('TIP TRANSMITTED — COMMAND WILL REVIEW', 'success');
+}
 }
 
 // ── Confirmed Intel Board ─────────────────────────────────
