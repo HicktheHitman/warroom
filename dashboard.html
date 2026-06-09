@@ -25,6 +25,8 @@
     <button class="nav-tab"        onclick="navTo('serverstatus', this)">SERVER STATUS</button>
     <button class="nav-tab"        onclick="navTo('tierlist', this)">TIER LIST</button>
     <button class="nav-tab"        onclick="navTo('patchnotes', this)">PATCH NOTES</button>
+    <button class="nav-tab"        onclick="navTo('dmz', this)"
+            style="opacity:0.45;cursor:pointer;">DMZ ▮</button>
     <button class="nav-tab"        onclick="navTo('dossier', this)" id="nav-dossier">DOSSIER</button>
   </nav>
 
@@ -74,6 +76,8 @@
   <div class="page" id="page-patchnotes">
     <div id="patchnotes-content"></div>
   </div>
+
+  <div class="page" id="page-dmz"></div>
 
   <div class="page" id="page-dossier">
     <div id="dossier-content"></div>
@@ -162,11 +166,44 @@
       case 'weapons':  loadWeaponsPage();  break;
       case 'impressions': loadImpressionsPage(); break;
       case 'fragcast':    loadFragcastPage();    break;
+      case 'dmz':          loadDmzPage();          break;
       case 'serverstatus': loadServerStatusPage(); break;
       case 'tierlist':     loadTierListPage();     break;
       case 'patchnotes':  loadPatchNotesPage();  break;
       case 'dossier':     loadDossierPage();     break;
     }
+  }
+
+  // ── DMZ placeholder ──────────────────────────────────────
+
+  function loadDmzPage() {
+    document.getElementById('page-dmz').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;
+                  min-height:50vh;padding:2rem;">
+        <div style="text-align:center;max-width:420px;">
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                      letter-spacing:3px;margin-bottom:12px;">CLEARANCE LEVEL: RESTRICTED</div>
+          <div style="font-family:var(--font-mil);font-size:36px;letter-spacing:4px;
+                      color:var(--red);margin-bottom:8px;">DMZ</div>
+          <div style="border:1px solid var(--red);padding:1.5rem;margin-bottom:1.5rem;
+                      background:rgba(180,30,30,0.05);">
+            <div style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+                        letter-spacing:2px;line-height:2;">
+              ██ INTEL RESTRICTED ██<br>
+              THIS SECTOR HAS BEEN CLASSIFIED<br>
+              BY ORDER OF HIGH COMMAND.<br><br>
+              OPERATIVES WILL BE BRIEFED<br>
+              WHEN CLEARANCE IS GRANTED.
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--red);
+                         display:inline-block;animation:blink 1s step-end infinite;"></span>
+            <span style="font-family:var(--font-mono);font-size:9px;color:var(--red);
+                         letter-spacing:2px;">STAND BY FOR FURTHER ORDERS</span>
+          </div>
+        </div>
+      </div>`;
   }
 
   // ── Google OAuth new user — callsign setup modal ─────────
