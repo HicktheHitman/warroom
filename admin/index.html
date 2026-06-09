@@ -81,6 +81,21 @@
     </div>
   </div>
 
+  <!-- ── TIP REVIEW QUEUE ── -->
+  <div class="card card-top" style="margin-bottom:1rem;border-top:2px solid var(--gold);">
+    <div class="card-header">
+      <div class="card-title">TIP REVIEW QUEUE</div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="tip-queue-count" style="font-family:var(--font-mono);font-size:9px;
+              color:var(--gold);letter-spacing:1px;"></span>
+        <button class="btn btn-ghost" onclick="loadTipQueue()" style="font-size:9px;">REFRESH</button>
+      </div>
+    </div>
+    <div id="tip-queue-list">
+      <div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>
+    </div>
+  </div>
+
   <!-- ── SERVER STATUS ── -->
   <div class="card card-top" style="margin-bottom:1rem;">
     <div class="card-header">
@@ -320,10 +335,134 @@
     }
     document.getElementById('admin-callsign').textContent = user.callsign;
     loadPostedIntel();
+    loadTipQueue();
     loadStatusAdminGrid();
     loadPostedPatchNotes();
     loadWeaponsAdmin();
   });
+
+  // ── TIP REVIEW QUEUE ────────────────────────────────────
+
+  const CONF_BADGE = {
+    confirmed:   { cls: 'badge-confirmed', label: 'CONFIRMED'   },
+    likely:      { cls: 'badge-confirmed', label: 'LIKELY'      },
+    unconfirmed: { cls: 'badge-operative', label: 'UNCONFIRMED' },
+  };
+
+  async function loadTipQueue() {
+    const container = document.getElementById('tip-queue-list');
+    const countEl   = document.getElementById('tip-queue-count');
+    container.innerHTML = '<div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>';
+
+    const { data, error } = await xhrGet('intel_tips', 'select=*&status=eq.pending&order=created_at.asc');
+
+    if (error) {
+      container.innerHTML = `<div style="font-family:var(--font-mono);font-size:10px;
+        color:var(--bone-dim);padding:1rem;text-align:center;">FAILED TO LOAD QUEUE</div>`;
+      return;
+    }
+
+    const tips = data || [];
+    if (countEl) countEl.textContent = tips.length ? `${tips.length} PENDING` : '';
+
+    if (!tips.length) {
+      container.innerHTML = `<div style="font-family:var(--font-mono);font-size:10px;
+        color:var(--bone-dim);padding:1rem;text-align:center;letter-spacing:1px;">
+        QUEUE CLEAR — NO PENDING TIPS</div>`;
+      return;
+    }
+
+    container.innerHTML = tips.map(t => {
+      const badge   = CONF_BADGE[t.confidence] || CONF_BADGE.unconfirmed;
+      const date    = new Date(t.created_at).toLocaleDateString('en-US', {
+        month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+      }).toUpperCase();
+      return `
+        <div style="padding:12px 0;border-bottom:1px solid var(--navy-border-dim);"
+             id="tip-row-${t.id}">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                      gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
+                <span class="badge ${badge.cls}">${badge.label}</span>
+                <span style="font-family:var(--font-mono);font-size:9px;color:var(--gold);
+                             letter-spacing:1px;">${esc(t.callsign || 'UNKNOWN')}</span>
+                <span style="font-family:var(--font-mono);font-size:8px;
+                             color:var(--bone-dim);">${date}</span>
+              </div>
+              <div style="font-family:var(--font-body);font-size:13px;font-weight:600;
+                          color:var(--bone);margin-bottom:3px;">${esc(t.title)}</div>
+              ${t.body ? `<div style="font-family:var(--font-body);font-size:12px;
+                color:var(--bone-muted);margin-bottom:3px;">${esc(t.body)}</div>` : ''}
+              ${t.source_name ? `<div style="font-family:var(--font-mono);font-size:9px;
+                color:var(--bone-dim);">SRC // ${esc(t.source_name).toUpperCase()}
+                ${t.source_url ? `— <a href="${esc(t.source_url)}" target="_blank"
+                  rel="noopener" style="color:var(--gold);">LINK ↗</a>` : ''}
+              </div>` : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="btn btn-primary" style="padding:5px 12px;font-size:8px;"
+                      onclick="approveTip('${t.id}','${esc(t.title).replace(/'/g,"\\'")}',
+                        '${esc(t.body||'').replace(/'/g,"\\'")}',
+                        '${esc(t.source_name||'').replace(/'/g,"\\'")}',
+                        '${esc(t.source_url||'').replace(/'/g,"\\'")}')">
+                APPROVE
+              </button>
+              <button class="btn btn-danger" style="padding:5px 12px;font-size:8px;"
+                      onclick="rejectTip('${t.id}')">
+                REJECT
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function approveTip(id, title, body, sourceName, sourceUrl) {
+    const profile = getCachedProfile();
+
+    const { error: postError } = await xhrPost('intel_posts', {
+      title,
+      status:      'confirmed',
+      body:        body        || null,
+      source_name: sourceName  || null,
+      source_url:  sourceUrl   || null,
+      posted_by:   profile?.id || null
+    });
+
+    if (postError) { showToast('FAILED TO PROMOTE TIP', 'error'); return; }
+
+    const { error: patchError } = await xhrPatch('intel_tips', `id=eq.${id}`, { status: 'approved' });
+    if (patchError) { showToast('TIP PROMOTED BUT STATUS NOT UPDATED', 'error'); return; }
+
+    document.getElementById(`tip-row-${id}`)?.remove();
+    const remaining = document.querySelectorAll('[id^="tip-row-"]').length;
+    const countEl   = document.getElementById('tip-queue-count');
+    if (countEl) countEl.textContent = remaining ? `${remaining} PENDING` : '';
+    if (!remaining) {
+      document.getElementById('tip-queue-list').innerHTML =
+        `<div style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+          padding:1rem;text-align:center;letter-spacing:1px;">QUEUE CLEAR — NO PENDING TIPS</div>`;
+    }
+    showToast(`TIP APPROVED — POSTED TO INTEL BOARD`, 'success');
+    loadPostedIntel();
+  }
+
+  async function rejectTip(id) {
+    if (!confirm('REJECT AND DISMISS THIS TIP?')) return;
+    const { error } = await xhrPatch('intel_tips', `id=eq.${id}`, { status: 'rejected' });
+    if (error) { showToast('REJECT FAILED', 'error'); return; }
+    document.getElementById(`tip-row-${id}`)?.remove();
+    const remaining = document.querySelectorAll('[id^="tip-row-"]').length;
+    const countEl   = document.getElementById('tip-queue-count');
+    if (countEl) countEl.textContent = remaining ? `${remaining} PENDING` : '';
+    if (!remaining) {
+      document.getElementById('tip-queue-list').innerHTML =
+        `<div style="font-family:var(--font-mono);font-size:10px;color:var(--bone-dim);
+          padding:1rem;text-align:center;letter-spacing:1px;">QUEUE CLEAR — NO PENDING TIPS</div>`;
+    }
+    showToast('TIP REJECTED', 'default');
+  }
 
   // ── POST INTEL ──────────────────────────────────────────
 
