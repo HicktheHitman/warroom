@@ -521,7 +521,7 @@ async function confirmCallsign() {
   }
   if (error) {
     resetButton(btn, 'CONFIRM DESIGNATION');
-    errEl.textContent = 'FAILED TO SAVE — TRY AGAIN';
+    errEl.textContent = 'FAILED TO SAVE: ' + error;
     errEl.style.display = 'block'; return;
   }
 
