@@ -159,6 +159,17 @@ function renderSubmitForm(prefill) {
         </div>
       </div>
 
+      <div class="field-group">
+        <label class="field-label" for="imp-embed">ATTACH CLIP (OPTIONAL)</label>
+        <input class="mil-input" type="url" id="imp-embed"
+               value="${impEsc(p.embed_url || '')}"
+               placeholder="YouTube, TikTok, or X/Twitter link">
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                    margin-top:4px;letter-spacing:0.5px;">
+          YOUTUBE EMBEDS INLINE — TIKTOK/X SHOWN AS LINK
+        </div>
+      </div>
+
       <button class="btn btn-primary" id="btn-imp-submit"
               onclick="${prefill ? 'updateImpression()' : 'submitImpression()'}"
               style="width:100%;margin-top:4px;">
@@ -197,6 +208,7 @@ function renderMyImpression() {
       </div>
       ${r.body ? `<div style="font-family:var(--font-body);font-size:13px;color:var(--bone-muted);
                               margin-top:8px;line-height:1.5;">${impEsc(r.body)}</div>` : ''}
+      ${impBuildEmbed(r.embed_url, r.embed_type)}
     </div>`;
 }
 
@@ -255,6 +267,7 @@ function renderFeed() {
               ${r.body ? `
               <div style="font-family:var(--font-body);font-size:13px;color:var(--bone-muted);
                           margin-top:6px;line-height:1.5;">${impEsc(r.body)}</div>` : ''}
+              ${impBuildEmbed(r.embed_url, r.embed_type)}
             </div>
           </div>
         </div>`;
@@ -294,13 +307,22 @@ function wireBodyCounter() {
 // ── Submit / Update ───────────────────────────────────────
 
 function collectFormData() {
+  const embedUrl = document.getElementById('imp-embed').value.trim();
+  let embedType  = null;
+  if (embedUrl) {
+    if (embedUrl.includes('youtube.com') || embedUrl.includes('youtu.be')) embedType = 'youtube';
+    else if (embedUrl.includes('tiktok.com'))                               embedType = 'tiktok';
+    else if (embedUrl.includes('twitter.com') || embedUrl.includes('x.com')) embedType = 'twitter';
+  }
   return {
-    score_overall:  parseInt(document.getElementById('imp-OVERALL').value, 10),
+    score_overall:  parseInt(document.getElementById('imp-OVERALL').value,  10),
     score_gameplay: parseInt(document.getElementById('imp-GAMEPLAY').value, 10),
     score_graphics: parseInt(document.getElementById('imp-GRAPHICS').value, 10),
-    score_audio:    parseInt(document.getElementById('imp-AUDIO').value, 10),
-    score_content:  parseInt(document.getElementById('imp-CONTENT').value, 10),
+    score_audio:    parseInt(document.getElementById('imp-AUDIO').value,    10),
+    score_content:  parseInt(document.getElementById('imp-CONTENT').value,  10),
     body:           document.getElementById('imp-body').value.trim() || null,
+    embed_url:      embedUrl  || null,
+    embed_type:     embedType || null,
   };
 }
 
@@ -346,6 +368,46 @@ async function updateImpression() {
 
   showToast('IMPRESSION UPDATED', 'success');
   await loadImpressionsPage();
+}
+
+// ── Embed builder ─────────────────────────────────────────
+
+function impBuildEmbed(url, type) {
+  if (!url) return '';
+  if (!type) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
+    else if (url.includes('tiktok.com'))                          type = 'tiktok';
+    else if (url.includes('twitter.com') || url.includes('x.com')) type = 'twitter';
+  }
+  if (type === 'youtube') {
+    const videoId = impYoutubeId(url);
+    if (!videoId) return `<a href="${impEsc(url)}" target="_blank" rel="noopener"
+      style="font-family:var(--font-mono);font-size:10px;color:var(--gold);">
+      VIEW CLIP ↗</a>`;
+    return `<div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;
+                        margin-top:10px;">
+      <iframe src="https://www.youtube.com/embed/${videoId}"
+              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;"
+              allowfullscreen loading="lazy"></iframe>
+    </div>`;
+  }
+  const label = type === 'tiktok' ? '▶ VIEW ON TIKTOK' : type === 'twitter' ? '▶ VIEW ON X' : '▶ VIEW CLIP';
+  return `<a href="${impEsc(url)}" target="_blank" rel="noopener"
+    style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+           font-family:var(--font-mono);font-size:10px;color:var(--gold);
+           border:1px solid var(--gold-dim);padding:4px 10px;
+           background:var(--gold-bg);">${label} ↗</a>`;
+}
+
+function impYoutubeId(url) {
+  const patterns = [
+    /youtu\.be\/([^?&]+)/,
+    /youtube\.com\/watch\?v=([^&]+)/,
+    /youtube\.com\/embed\/([^?&]+)/,
+    /youtube\.com\/shorts\/([^?&]+)/
+  ];
+  for (const p of patterns) { const m = url.match(p); if (m) return m[1]; }
+  return null;
 }
 
 // ── Helpers ───────────────────────────────────────────────
