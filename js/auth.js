@@ -291,15 +291,8 @@ async function fetchCurrentUser() {
     if (metaCallsign && /^[A-Za-z0-9_\-]{3,24}$/.test(metaCallsign)) {
       callsign = metaCallsign.toUpperCase();
     } else {
-      const countRes = await fetch(`${API_BASE}/profiles?select=id`, {
-        headers: {
-          'apikey': WARROOM_CONFIG.supabaseAnonKey,
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-      const countData = countRes.ok ? await countRes.json() : [];
-      const count = countData.length || 0;
-      callsign = 'OPERATIVE_' + String(count + 1).padStart(2, '0');
+      // Use first 6 chars of user UUID — unique per user, no count query needed
+      callsign = 'OPERATIVE_' + userId.replace(/-/g, '').slice(0, 6).toUpperCase();
     }
 
     // Insert the missing profile
@@ -407,10 +400,9 @@ function showForm(name) {
 
 async function checkCallsignSetup() {
   const profile = await fetchCurrentUser();
-  if (!profile) return;
 
-  // Only intercept if callsign matches OPERATIVE_ pattern
-  if (!profile.callsign || !profile.callsign.startsWith('OPERATIVE_')) return;
+  // Show prompt if no profile at all, or if assigned a temporary OPERATIVE_ callsign
+  if (profile && !profile.callsign.startsWith('OPERATIVE_')) return;
 
   // Build full-screen overlay
   const overlay = document.createElement('div');
