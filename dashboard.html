@@ -20,7 +20,7 @@
     <button class="nav-tab active" onclick="navTo('intel', this)">INTEL FEED</button>
     <button class="nav-tab"        onclick="navTo('leaks', this)">LEAK TRACKER</button>
     <button class="nav-tab"        onclick="navTo('weapons', this)">WEAPONS DB</button>
-    <button class="nav-tab"        onclick="navTo('reports', this)">FIELD REPORTS</button>
+    <button class="nav-tab"        onclick="navTo('impressions', this)">FIRST IMPRESSIONS</button>
     <button class="nav-tab"        onclick="navTo('fragcast', this)">FRAGCAST</button>
     <button class="nav-tab"        onclick="navTo('serverstatus', this)">SERVER STATUS</button>
     <button class="nav-tab"        onclick="navTo('tierlist', this)">TIER LIST</button>
@@ -55,8 +55,8 @@
     <div id="weapons-content"></div>
   </div>
 
-  <div class="page" id="page-reports">
-    <div id="reports-content"></div>
+  <div class="page" id="page-impressions">
+    <div id="impressions-content"></div>
   </div>
 
   <div class="page" id="page-fragcast">
@@ -96,7 +96,7 @@
 <script src="js/intel.js"></script>
 <script src="js/leaks.js"></script>
 <script src="js/votes.js"></script>
-<script src="js/feed.js"></script>
+<script src="js/impressions.js"></script>
 <script src="js/fragcast.js"></script>
 <script src="js/serverstatus.js"></script>
 <script src="js/tierlist.js"></script>
@@ -160,7 +160,7 @@
       case 'intel':    loadIntelPage();    break;
       case 'leaks':    loadLeaksPage();    break;
       case 'weapons':  loadWeaponsPage();  break;
-      case 'reports':  loadReportsPage();  break;
+      case 'impressions': loadImpressionsPage(); break;
       case 'fragcast':    loadFragcastPage();    break;
       case 'serverstatus': loadServerStatusPage(); break;
       case 'tierlist':     loadTierListPage();     break;
