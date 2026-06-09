@@ -56,6 +56,8 @@ function renderImpressionsPage(profile) {
            TO SUBMIT YOUR IMPRESSION
          </div>`}
     ${renderFeed()}`;
+
+  wireBodyCounter();
 }
 
 // ── Community Aggregates ──────────────────────────────────
@@ -158,7 +160,7 @@ function renderSubmitForm(prefill) {
       </div>
 
       <button class="btn btn-primary" id="btn-imp-submit"
-              onclick="${prefill ? 'updateImpression()' : 'submitImpression()}'"
+              onclick="${prefill ? 'updateImpression()' : 'submitImpression()'}"
               style="width:100%;margin-top:4px;">
         ${prefill ? 'UPDATE IMPRESSION' : 'SUBMIT IMPRESSION'}
       </button>
