@@ -130,7 +130,13 @@ function renderTierBuilder() {
       <span id="tl-status" style="font-family:var(--font-mono);font-size:9px;
             color:var(--olive-glow);letter-spacing:1px;"></span>
       ${profile
-        ? `<button id="tl-save-btn" onclick="saveTierList()"
+        ? `<button onclick="clearTierList()"
+                   style="font-family:var(--font-mono);font-size:9px;padding:8px 16px;
+                          cursor:pointer;border:1px solid var(--navy-border);letter-spacing:1px;
+                          background:transparent;color:var(--bone-dim);">
+             CLEAR LIST
+           </button>
+           <button id="tl-save-btn" onclick="saveTierList()"
                    style="font-family:var(--font-mono);font-size:9px;padding:8px 20px;
                           cursor:pointer;border:1px solid var(--gold);letter-spacing:1px;
                           background:var(--gold);color:var(--navy-dark);">
@@ -208,6 +214,12 @@ async function saveTierList() {
     setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2500);
   }
   showToast('TIER LIST LOCKED IN', 'success');
+}
+
+function clearTierList() {
+  if (!confirm('CLEAR YOUR ENTIRE TIER LIST?')) return;
+  _tlTierState = {};
+  renderTierBuilder();
 }
 
 // ── Community ─────────────────────────────────────────────
