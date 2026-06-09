@@ -81,6 +81,95 @@
     </div>
   </div>
 
+  <!-- ── PATCH NOTES ── -->
+  <div class="card card-top" style="margin-bottom:1rem;">
+    <div class="card-header">
+      <div class="card-title">POST PATCH NOTE</div>
+      <div class="dot dot-gold"></div>
+    </div>
+    <div class="error-msg" id="patch-error"></div>
+    <div id="patch-success" style="display:none;font-family:var(--font-mono);font-size:10px;
+         color:var(--olive-glow);letter-spacing:1px;margin-bottom:10px;padding:6px 8px;
+         background:var(--olive-bg);border:1px solid var(--olive);"></div>
+
+    <div class="grid-2" style="margin-bottom:1rem;">
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="patch-version">VERSION / TITLE</label>
+        <input class="mil-input" type="text" id="patch-version"
+               placeholder="E.G. UPDATE 1.04 — WEAPON BALANCE">
+      </div>
+      <div class="field-group" style="margin-bottom:0;">
+        <label class="field-label" for="patch-date">PATCH DATE</label>
+        <input class="mil-input" type="date" id="patch-date"
+               style="cursor:pointer;background:var(--navy);">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label">CATEGORIES</label>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px;">
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--bone-muted);
+                      display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" name="patch-cat" value="WEAPONS"> WEAPONS
+        </label>
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--bone-muted);
+                      display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" name="patch-cat" value="MAPS"> MAPS
+        </label>
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--bone-muted);
+                      display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" name="patch-cat" value="MODES"> MODES
+        </label>
+        <label style="font-family:var(--font-mono);font-size:10px;color:var(--bone-muted);
+                      display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" name="patch-cat" value="BUG FIXES"> BUG FIXES
+        </label>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="patch-source-url">SOURCE URL (OFFICIAL PATCH NOTES)</label>
+      <input class="mil-input" type="url" id="patch-source-url" placeholder="https://...">
+    </div>
+
+    <button class="btn btn-primary" id="btn-post-patch" onclick="postPatchNote()">
+      TRANSMIT PATCH NOTE
+    </button>
+  </div>
+
+  <!-- ── POSTED PATCH NOTES ── -->
+  <div class="card card-top" style="margin-bottom:1rem;">
+    <div class="card-header">
+      <div class="card-title">POSTED PATCH NOTES</div>
+      <button class="btn btn-ghost" onclick="loadPostedPatchNotes()" style="font-size:9px;">REFRESH</button>
+    </div>
+    <div id="posted-patch-list">
+      <div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>
+    </div>
+  </div>
+
+  <!-- ── RSS SYNC ── -->
+  <div class="card card-top-olive" style="margin-bottom:1rem;">
+    <div class="card-header">
+      <div class="card-title">RSS SYNC</div>
+      <div class="dot dot-olive"></div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                letter-spacing:1px;margin-bottom:12px;line-height:1.6;">
+      WIRE AN OFFICIAL PATCH NOTES RSS/ATOM FEED FOR AUTO-IMPORT.
+      REQUIRES A SUPABASE EDGE FUNCTION TO BYPASS CORS.
+    </div>
+    <div class="field-group">
+      <label class="field-label" for="rss-feed-url">FEED URL</label>
+      <input class="mil-input" type="url" id="rss-feed-url"
+             placeholder="https://www.callofduty.com/feed/rss">
+    </div>
+    <button class="btn btn-secondary" style="opacity:0.6;cursor:not-allowed;"
+            title="Requires edge function — coming soon">
+      SYNC FEED (EDGE FUNCTION REQUIRED)
+    </button>
+  </div>
+
   <!-- ── WEAPON MANAGEMENT ── -->
   <div class="card card-top-olive" style="margin-bottom:1rem;">
     <div class="card-header">
@@ -204,6 +293,7 @@
     }
     document.getElementById('admin-callsign').textContent = user.callsign;
     loadPostedIntel();
+    loadPostedPatchNotes();
     loadWeaponsAdmin();
   });
 
@@ -354,6 +444,109 @@
     if (error) { showToast('DELETE FAILED', 'error'); return; }
     showToast('INTEL DELETED', 'default');
     loadPostedIntel();
+  }
+
+  // ── PATCH NOTES ─────────────────────────────────────────
+
+  async function postPatchNote() {
+    const version    = document.getElementById('patch-version').value.trim().toUpperCase();
+    const patchDate  = document.getElementById('patch-date').value;
+    const sourceUrl  = document.getElementById('patch-source-url').value.trim();
+    const categories = Array.from(document.querySelectorAll('input[name="patch-cat"]:checked'))
+                            .map(cb => cb.value);
+    const errEl = document.getElementById('patch-error');
+    const sucEl = document.getElementById('patch-success');
+    const btn   = document.getElementById('btn-post-patch');
+
+    errEl.classList.remove('visible');
+    sucEl.style.display = 'none';
+
+    if (!version) {
+      errEl.textContent = 'VERSION / TITLE IS REQUIRED';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    const profile = getCachedProfile();
+    setButtonLoading(btn, 'TRANSMITTING...');
+
+    const { error } = await xhrPost('patch_notes', {
+      version,
+      patch_date:  patchDate  || null,
+      categories:  categories.length ? categories : null,
+      source_url:  sourceUrl  || null,
+      posted_by:   profile?.id || null
+    });
+
+    resetButton(btn, 'TRANSMIT PATCH NOTE');
+
+    if (error) {
+      errEl.textContent = 'FAILED TO POST: ' + error;
+      errEl.classList.add('visible');
+      return;
+    }
+
+    document.getElementById('patch-version').value = '';
+    document.getElementById('patch-date').value = '';
+    document.getElementById('patch-source-url').value = '';
+    document.querySelectorAll('input[name="patch-cat"]').forEach(cb => cb.checked = false);
+    sucEl.textContent = `PATCH NOTE POSTED: "${version}"`;
+    sucEl.style.display = 'block';
+    loadPostedPatchNotes();
+    showToast('PATCH NOTE POSTED', 'success');
+  }
+
+  async function loadPostedPatchNotes() {
+    const container = document.getElementById('posted-patch-list');
+    container.innerHTML = '<div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>';
+
+    const { data, error } = await xhrGet('patch_notes', 'select=*&order=patch_date.desc,created_at.desc');
+
+    if (error || !data || !data.length) {
+      container.innerHTML = `<div style="font-family:var(--font-mono);font-size:10px;
+        color:var(--bone-dim);padding:1rem;text-align:center;letter-spacing:1px;">
+        NO PATCH NOTES POSTED YET</div>`;
+      return;
+    }
+
+    container.innerHTML = data.map(p => {
+      const cats = Array.isArray(p.categories) ? p.categories
+                 : (p.categories ? JSON.parse(p.categories) : []);
+      const patchDate = p.patch_date
+        ? new Date(p.patch_date + 'T12:00:00').toLocaleDateString('en-US', {
+            year:'numeric', month:'short', day:'numeric'
+          }).toUpperCase()
+        : 'NO DATE';
+      const catStr = cats.length ? cats.join(', ') : '—';
+
+      return `
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                    gap:12px;padding:10px 0;border-bottom:1px solid var(--navy-border-dim);">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;">
+              <span style="font-family:var(--font-mil);font-size:13px;letter-spacing:1px;
+                           color:var(--gold);">${esc(p.version)}</span>
+              <span style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);">
+                ${patchDate}
+              </span>
+            </div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                        letter-spacing:1px;">${esc(catStr)}</div>
+          </div>
+          <button class="btn btn-danger" style="padding:4px 10px;font-size:8px;flex-shrink:0;"
+                  onclick="deletePatchNote('${p.id}', '${esc(p.version).replace(/'/g,"\\'")}')">
+            DELETE
+          </button>
+        </div>`;
+    }).join('');
+  }
+
+  async function deletePatchNote(id, version) {
+    if (!confirm(`DELETE PATCH NOTE: ${version}?`)) return;
+    const { error } = await xhrDelete('patch_notes', `id=eq.${id}`);
+    if (error) { showToast('DELETE FAILED', 'error'); return; }
+    showToast('PATCH NOTE DELETED', 'default');
+    loadPostedPatchNotes();
   }
 
   // ── WEAPON MANAGEMENT ───────────────────────────────────

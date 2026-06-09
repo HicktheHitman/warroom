@@ -22,6 +22,7 @@
     <button class="nav-tab"        onclick="navTo('weapons', this)">WEAPONS DB</button>
     <button class="nav-tab"        onclick="navTo('reports', this)">FIELD REPORTS</button>
     <button class="nav-tab"        onclick="navTo('fragcast', this)">FRAGCAST</button>
+    <button class="nav-tab"        onclick="navTo('patchnotes', this)">PATCH NOTES</button>
     <button class="nav-tab"        onclick="navTo('dossier', this)" id="nav-dossier">DOSSIER</button>
   </nav>
 
@@ -60,6 +61,10 @@
     <div id="fragcast-content"></div>
   </div>
 
+  <div class="page" id="page-patchnotes">
+    <div id="patchnotes-content"></div>
+  </div>
+
   <div class="page" id="page-dossier">
     <div id="dossier-content"></div>
   </div>
@@ -83,6 +88,7 @@
 <script src="js/votes.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/fragcast.js"></script>
+<script src="js/patchnotes.js"></script>
 <script src="js/dossier.js"></script>
 
 <script>
@@ -97,10 +103,8 @@
     if (!requireAuth()) return;
 
     // Load profile from DB
-  currentUser = await fetchCurrentUser();
-  await checkCallsignSetup();
-
-  // Fallback: pull callsign from session user_metadata if DB fetch failed
+    currentUser = await fetchCurrentUser();
+    await checkCallsignSetup();
 
     // Fallback: pull callsign from session user_metadata if DB fetch failed
     if (!currentUser) {
@@ -122,13 +126,6 @@
         a.style.color = 'var(--gold)';
         a.textContent = 'COMMAND';
         document.querySelector('.topbar-nav').appendChild(a);
-      }
-    } else {
-      // Truly new Google OAuth user with no profile and no metadata — needs callsign setup
-      const session = getSession();
-      if (session && session.access_token && !(session.user && session.user.user_metadata && session.user.user_metadata.callsign)) {
-        showCallsignSetup();
-        return;
       }
     }
 
@@ -152,8 +149,9 @@
       case 'leaks':    loadLeaksPage();    break;
       case 'weapons':  loadWeaponsPage();  break;
       case 'reports':  loadReportsPage();  break;
-      case 'fragcast': loadFragcastPage(); break;
-      case 'dossier':  loadDossierPage();  break;
+      case 'fragcast':    loadFragcastPage();    break;
+      case 'patchnotes':  loadPatchNotesPage();  break;
+      case 'dossier':     loadDossierPage();     break;
     }
   }
 
