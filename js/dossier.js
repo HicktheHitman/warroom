@@ -14,10 +14,11 @@ async function loadDossierPage() {
   if (!session) return;
 
   // Load profile + counts in parallel
+  const profileId = getCachedProfile()?.id || 'none';
   const [profileRes, reportsRes, leaksRes] = await Promise.all([
-    xhrGet('profiles', 'select=*&limit=1'),
-    xhrGet('field_reports', `select=id&user_id=eq.${getCachedProfile()?.id || 'none'}`),
-    xhrGet('leaks', `select=id&submitted_by=eq.${getCachedProfile()?.id || 'none'}`)
+    xhrGet('profiles', `select=*&id=eq.${profileId}&limit=1`),
+    xhrGet('field_reports', `select=id&user_id=eq.${profileId}`),
+    xhrGet('leaks', `select=id&submitted_by=eq.${profileId}`)
   ]);
 
   const profile      = profileRes.data?.[0];

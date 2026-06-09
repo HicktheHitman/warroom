@@ -68,6 +68,8 @@ async function refreshSession() {
     const data = await res.json();
     if (!data.access_token) return false;
     data.expires_at = Math.floor(Date.now() / 1000) + (data.expires_in || 3600);
+    // Preserve user object — refresh response may omit it
+    if (!data.user && session.user) data.user = session.user;
     saveSession(data);
     return true;
   } catch (e) { return false; }
@@ -171,7 +173,7 @@ async function handleSignUp() {
 
 function handleGoogleAuth() {
   const redirectTo = encodeURIComponent(window.location.origin + '/dashboard.html');
-  window.location.href = `${AUTH_BASE}/authorize?provider=google&redirect_to=${redirectTo}`;
+  window.location.href = `${AUTH_BASE}/authorize?provider=google&redirect_to=${redirectTo}&flow_type=implicit`;
 }
 
 // ── Sign Out ─────────────────────────────────────────────
@@ -234,18 +236,36 @@ async function fetchCurrentUser() {
   const session = getSession();
   if (!session || !session.access_token) return null;
 
-  // Validate cache belongs to current session user
+  // Resolve user ID — prefer session cache, fall back to /user endpoint
+  let userId = session.user?.id;
+  if (!userId) {
+    try {
+      const userRes = await fetch(`${AUTH_BASE}/user`, {
+        headers: {
+          'apikey': WARROOM_CONFIG.supabaseAnonKey,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      if (userRes.ok) {
+        const userData = await userRes.json();
+        userId = userData.id;
+        if (userId) saveSession({ ...session, user: { id: userId } });
+      }
+    } catch (e) {}
+  }
+
+  if (!userId) return null;
+
+  // Return cache only when it verifiably belongs to this user
   const cached = getCachedProfile();
   if (cached) {
-    const sessionUserId = session.user?.id;
-    if (!sessionUserId || cached.id === sessionUserId) return cached;
-    // Cache belongs to different user — clear it
+    if (cached.id === userId) return cached;
     localStorage.removeItem(PROFILE_KEY);
   }
 
   try {
     const res = await fetch(
-      `${API_BASE}/profiles?select=*&limit=1`,
+      `${API_BASE}/profiles?select=*&id=eq.${userId}&limit=1`,
       {
         headers: {
           'apikey': WARROOM_CONFIG.supabaseAnonKey,
@@ -264,26 +284,23 @@ async function fetchCurrentUser() {
     }
 
     // No profile found — create one automatically (catches Google OAuth fallthrough)
-    const userRes = await fetch(`${AUTH_BASE}/user`, {
-      headers: {
-        'apikey': WARROOM_CONFIG.supabaseAnonKey,
-        'Authorization': `Bearer ${session.access_token}`
-      }
-    });
-    if (!userRes.ok) return null;
-    const userData = await userRes.json();
-    if (!userData || !userData.id) return null;
-
     // Count existing profiles to assign next OPERATIVE number
-    const countRes = await fetch(`${API_BASE}/profiles?select=id`, {
-      headers: {
-        'apikey': WARROOM_CONFIG.supabaseAnonKey,
-        'Authorization': `Bearer ${session.access_token}`
-      }
-    });
-    const countData = countRes.ok ? await countRes.json() : [];
-    const count = countData.length || 0;
-    const callsign = 'OPERATIVE_' + String(count + 1).padStart(2, '0');
+    // Use callsign from user_metadata (email signup) if available
+    const metaCallsign = session.user?.user_metadata?.callsign;
+    let callsign;
+    if (metaCallsign && /^[A-Za-z0-9_\-]{3,24}$/.test(metaCallsign)) {
+      callsign = metaCallsign.toUpperCase();
+    } else {
+      const countRes = await fetch(`${API_BASE}/profiles?select=id`, {
+        headers: {
+          'apikey': WARROOM_CONFIG.supabaseAnonKey,
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+      const countData = countRes.ok ? await countRes.json() : [];
+      const count = countData.length || 0;
+      callsign = 'OPERATIVE_' + String(count + 1).padStart(2, '0');
+    }
 
     // Insert the missing profile
     await fetch(`${API_BASE}/profiles`, {
@@ -295,7 +312,7 @@ async function fetchCurrentUser() {
         'Prefer': 'return=minimal'
       },
       body: JSON.stringify({
-        id: userData.id,
+        id: userId,
         callsign,
         role: 'operative',
         created_at: new Date().toISOString()
@@ -303,7 +320,7 @@ async function fetchCurrentUser() {
     });
 
     // Fetch and cache the newly created profile
-    const newRes = await fetch(`${API_BASE}/profiles?select=*&limit=1`, {
+    const newRes = await fetch(`${API_BASE}/profiles?select=*&id=eq.${userId}&limit=1`, {
       headers: {
         'apikey': WARROOM_CONFIG.supabaseAnonKey,
         'Authorization': `Bearer ${session.access_token}`,
@@ -516,10 +533,15 @@ async function confirmCallsign() {
     errEl.style.display = 'block'; return;
   }
 
-  // Remove overlay and reload
+  // Remove overlay and update topbar
   const overlay = document.getElementById('callsign-setup-overlay');
   if (overlay) overlay.remove();
   invalidateProfileCache();
+
+  const topbarEl = document.getElementById('topbar-callsign');
+  if (topbarEl) topbarEl.textContent = callsign;
+  if (typeof currentUser !== 'undefined' && currentUser) currentUser.callsign = callsign;
+
   showToast('CALLSIGN CONFIRMED — WELCOME TO WARROOM', 'success');
 }
 
