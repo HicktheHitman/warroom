@@ -22,6 +22,7 @@
     <button class="nav-tab"        onclick="navTo('weapons', this)">WEAPONS DB</button>
     <button class="nav-tab"        onclick="navTo('reports', this)">FIELD REPORTS</button>
     <button class="nav-tab"        onclick="navTo('fragcast', this)">FRAGCAST</button>
+    <button class="nav-tab"        onclick="navTo('serverstatus', this)">SERVER STATUS</button>
     <button class="nav-tab"        onclick="navTo('tierlist', this)">TIER LIST</button>
     <button class="nav-tab"        onclick="navTo('patchnotes', this)">PATCH NOTES</button>
     <button class="nav-tab"        onclick="navTo('dossier', this)" id="nav-dossier">DOSSIER</button>
@@ -62,6 +63,10 @@
     <div id="fragcast-content"></div>
   </div>
 
+  <div class="page" id="page-serverstatus">
+    <div id="serverstatus-content"></div>
+  </div>
+
   <div class="page" id="page-tierlist">
     <div id="tierlist-content"></div>
   </div>
@@ -93,6 +98,7 @@
 <script src="js/votes.js"></script>
 <script src="js/feed.js"></script>
 <script src="js/fragcast.js"></script>
+<script src="js/serverstatus.js"></script>
 <script src="js/tierlist.js"></script>
 <script src="js/patchnotes.js"></script>
 <script src="js/dossier.js"></script>
@@ -156,7 +162,8 @@
       case 'weapons':  loadWeaponsPage();  break;
       case 'reports':  loadReportsPage();  break;
       case 'fragcast':    loadFragcastPage();    break;
-      case 'tierlist':    loadTierListPage();    break;
+      case 'serverstatus': loadServerStatusPage(); break;
+      case 'tierlist':     loadTierListPage();     break;
       case 'patchnotes':  loadPatchNotesPage();  break;
       case 'dossier':     loadDossierPage();     break;
     }

@@ -81,6 +81,33 @@
     </div>
   </div>
 
+  <!-- ── SERVER STATUS ── -->
+  <div class="card card-top" style="margin-bottom:1rem;">
+    <div class="card-header">
+      <div class="card-title">SERVER STATUS</div>
+      <div class="dot dot-gold"></div>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);
+                letter-spacing:1px;margin-bottom:12px;line-height:1.6;">
+      UPDATE SERVER STATUS FOR EACH PLATFORM + SERVICE.
+    </div>
+    <div id="ss-admin-grid">
+      <div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>
+    </div>
+    <div style="margin-top:1rem;">
+      <label class="field-label" for="ss-incident-msg">INCIDENT MESSAGE (OPTIONAL)</label>
+      <input class="mil-input" type="text" id="ss-incident-msg"
+             placeholder="E.G. ELEVATED MATCHMAKING QUEUE TIMES ON EU SERVERS">
+    </div>
+    <button class="btn btn-primary" id="btn-update-status" style="margin-top:0.75rem;"
+            onclick="pushStatusUpdate()">
+      PUSH STATUS UPDATE
+    </button>
+    <div id="ss-admin-success" style="display:none;font-family:var(--font-mono);font-size:10px;
+         color:var(--olive-glow);letter-spacing:1px;margin-top:10px;padding:6px 8px;
+         background:var(--olive-bg);border:1px solid var(--olive);"></div>
+  </div>
+
   <!-- ── PATCH NOTES ── -->
   <div class="card card-top" style="margin-bottom:1rem;">
     <div class="card-header">
@@ -293,6 +320,7 @@
     }
     document.getElementById('admin-callsign').textContent = user.callsign;
     loadPostedIntel();
+    loadStatusAdminGrid();
     loadPostedPatchNotes();
     loadWeaponsAdmin();
   });
@@ -444,6 +472,105 @@
     if (error) { showToast('DELETE FAILED', 'error'); return; }
     showToast('INTEL DELETED', 'default');
     loadPostedIntel();
+  }
+
+  // ── SERVER STATUS ────────────────────────────────────────
+
+  const ADM_PLATFORMS = ['PC', 'XBOX', 'PLAYSTATION'];
+  const ADM_SERVICES  = ['MATCHMAKING', 'LOGIN', 'STORE'];
+
+  async function loadStatusAdminGrid() {
+    const container = document.getElementById('ss-admin-grid');
+    const { data } = await xhrGet('server_status', 'select=*');
+    const map = {};
+    (data || []).forEach(r => { map[`${r.platform}|${r.service}`] = r.status; });
+
+    container.innerHTML = `
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;min-width:400px;">
+          <thead>
+            <tr>
+              <th style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);
+                         letter-spacing:2px;text-align:left;padding:4px 8px;
+                         border-bottom:1px solid var(--navy-border);font-weight:normal;">
+                PLATFORM
+              </th>
+              ${ADM_SERVICES.map(s => `
+              <th style="font-family:var(--font-mono);font-size:8px;color:var(--bone-dim);
+                         letter-spacing:2px;text-align:center;padding:4px 8px;
+                         border-bottom:1px solid var(--navy-border);font-weight:normal;">
+                ${s}
+              </th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${ADM_PLATFORMS.map(platform => `
+            <tr style="border-bottom:1px solid var(--navy-border-dim);">
+              <td style="font-family:var(--font-mono);font-size:10px;color:var(--bone);
+                         letter-spacing:1px;padding:8px;">
+                ${platform === 'PLAYSTATION' ? 'PS5' : platform}
+              </td>
+              ${ADM_SERVICES.map(svc => {
+                const key    = `${platform}|${svc}`;
+                const current = map[key] || 'online';
+                return `
+                <td style="text-align:center;padding:6px 8px;">
+                  <select id="ss-sel-${key}" class="mil-input"
+                          style="font-size:9px;padding:3px 6px;cursor:pointer;
+                                 background:var(--navy);width:auto;">
+                    <option value="online"   ${current==='online'   ?'selected':''}>ONLINE</option>
+                    <option value="degraded" ${current==='degraded' ?'selected':''}>DEGRADED</option>
+                    <option value="offline"  ${current==='offline'  ?'selected':''}>OFFLINE</option>
+                  </select>
+                </td>`;
+              }).join('')}
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  async function pushStatusUpdate() {
+    const profile = getCachedProfile();
+    const message = document.getElementById('ss-incident-msg').value.trim();
+    const btn     = document.getElementById('btn-update-status');
+    const sucEl   = document.getElementById('ss-admin-success');
+
+    setButtonLoading(btn, 'PUSHING...');
+
+    const updates = [];
+    ADM_PLATFORMS.forEach(platform => {
+      ADM_SERVICES.forEach(svc => {
+        const sel = document.getElementById(`ss-sel-${platform}|${svc}`);
+        if (sel) updates.push({ platform, service: svc, status: sel.value,
+                                message: message || null,
+                                updated_by: profile?.id || null });
+      });
+    });
+
+    let failed = false;
+    for (const row of updates) {
+      const { error } = await xhrPatch(
+        'server_status',
+        `platform=eq.${encodeURIComponent(row.platform)}&service=eq.${encodeURIComponent(row.service)}`,
+        { status: row.status, message: row.message, updated_by: row.updated_by,
+          updated_at: new Date().toISOString() }
+      );
+      if (error) { failed = true; break; }
+    }
+
+    resetButton(btn, 'PUSH STATUS UPDATE');
+
+    if (failed) {
+      showToast('STATUS UPDATE FAILED', 'error');
+      return;
+    }
+
+    document.getElementById('ss-incident-msg').value = '';
+    sucEl.textContent = 'STATUS UPDATED — OPERATIVES WILL SEE CHANGES WITHIN 30S';
+    sucEl.style.display = 'block';
+    setTimeout(() => { sucEl.style.display = 'none'; }, 4000);
+    showToast('STATUS PUSHED', 'success');
   }
 
   // ── PATCH NOTES ─────────────────────────────────────────
