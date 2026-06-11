@@ -200,18 +200,45 @@ function renderFragcastSidebar() {
 
 // ── RSS Sync (admin only) ─────────────────────────────────
 
+async function fetchRSSXml(rssUrl) {
+  const parser = new DOMParser();
+  const proxyUrl = `/api/rss?url=${encodeURIComponent(rssUrl)}`;
+
+  console.log('[FragCast RSS] Fetching via:', proxyUrl);
+  try {
+    const res = await fetch(proxyUrl);
+    console.log('[FragCast RSS] Status:', res.status);
+    if (!res.ok) {
+      console.warn('[FragCast RSS] Non-OK response:', res.status);
+      return null;
+    }
+    const text = await res.text();
+    console.log('[FragCast RSS] Response preview:', text.substring(0, 300));
+    const xml = parser.parseFromString(text, 'text/xml');
+    const parseErr = xml.querySelector('parsererror');
+    if (parseErr) { console.warn('[FragCast RSS] Parse error:', parseErr.textContent); return null; }
+    console.log('[FragCast RSS] Items found:', xml.querySelectorAll('item').length);
+    return xml;
+  } catch (e) {
+    console.warn('[FragCast RSS] Fetch threw:', e);
+    return null;
+  }
+}
+
 async function syncFromRSS() {
   const btn = document.getElementById('btn-rss-sync');
   if (btn) { btn.disabled = true; btn.textContent = 'SYNCING...'; }
 
   try {
     const rssUrl = 'https://anchor.fm/s/1131b36cc/podcast/rss';
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(rssUrl)}`;
+    const xml = await fetchRSSXml(rssUrl);
 
-    const res = await fetch(proxyUrl);
-    const json = await res.json();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(json.contents, 'text/xml');
+    if (!xml) {
+      showToast('RSS FETCH FAILED — ALL PROXIES DOWN', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'SYNC RSS'; }
+      return;
+    }
+
     const items = Array.from(xml.querySelectorAll('item'));
 
     if (!items.length) {
@@ -220,23 +247,34 @@ async function syncFromRSS() {
       return;
     }
 
-    const { data: existing } = await xhrGet('fragcast_episodes', 'select=episode_num');
-    const existingNums = new Set((existing || []).map(e => e.episode_num));
+    const { data: existing } = await xhrGet('fragcast_episodes', 'select=episode_num,title');
+    const existingNums  = new Set((existing || []).map(e => e.episode_num));
+    const existingTitles = new Set((existing || []).map(e => e.title?.toLowerCase().trim()));
 
     let newCount = 0;
     const totalItems = items.length;
+
+    console.log(`[FragCast RSS] ${totalItems} items in feed. Existing ep nums:`, [...existingNums].sort((a,b)=>a-b));
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const title = item.querySelector('title')?.textContent?.trim() || 'UNTITLED';
       const description = item.querySelector('description')?.textContent?.replace(/<[^>]*>/g, '').trim() || null;
       const pubDate = item.querySelector('pubDate')?.textContent?.trim();
-      const episodeNum = totalItems - i;
 
-      if (existingNums.has(episodeNum)) continue;
+      // prefer explicit itunes:episode tag; fall back to position-based count
+      const itunesEp = item.getElementsByTagNameNS('http://www.itunes.com/dtds/podcast-1.0.dtd', 'episode')[0]
+                    || item.querySelector('episode');
+      const episodeNum = itunesEp ? parseInt(itunesEp.textContent.trim(), 10) : (totalItems - i);
+
+      console.log(`[FragCast RSS] item ${i}: ep ${episodeNum} — "${title}" (itunes tag: ${itunesEp ? itunesEp.textContent.trim() : 'none'})`);
+
+      if (existingNums.has(episodeNum) || existingTitles.has(title.toLowerCase().trim())) continue;
 
       const guid = item.querySelector('guid')?.textContent?.trim() || null;
-      const spotifyUrl = guid && guid.includes('spotify') ? guid : null;
+      const link = item.querySelector('link')?.textContent?.trim() || null;
+      const spotifyUrl = (guid && guid.includes('spotify') ? guid : null)
+                      || (link && link.includes('spotify') ? link : null);
 
       const durationSecs = item.querySelector('duration')?.textContent?.trim();
       let duration = null;
