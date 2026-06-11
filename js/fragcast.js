@@ -204,20 +204,12 @@ async function fetchRSSXml(rssUrl) {
   const parser = new DOMParser();
   const proxyUrl = `/api/rss?url=${encodeURIComponent(rssUrl)}`;
 
-  console.log('[FragCast RSS] Fetching via:', proxyUrl);
   try {
     const res = await fetch(proxyUrl);
-    console.log('[FragCast RSS] Status:', res.status);
-    if (!res.ok) {
-      console.warn('[FragCast RSS] Non-OK response:', res.status);
-      return null;
-    }
+    if (!res.ok) return null;
     const text = await res.text();
-    console.log('[FragCast RSS] Response preview:', text.substring(0, 300));
     const xml = parser.parseFromString(text, 'text/xml');
-    const parseErr = xml.querySelector('parsererror');
-    if (parseErr) { console.warn('[FragCast RSS] Parse error:', parseErr.textContent); return null; }
-    console.log('[FragCast RSS] Items found:', xml.querySelectorAll('item').length);
+    if (xml.querySelector('parsererror')) return null;
     return xml;
   } catch (e) {
     console.warn('[FragCast RSS] Fetch threw:', e);
@@ -254,8 +246,6 @@ async function syncFromRSS() {
     let newCount = 0;
     const totalItems = items.length;
 
-    console.log(`[FragCast RSS] ${totalItems} items in feed. Existing ep nums:`, [...existingNums].sort((a,b)=>a-b));
-
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       const title = item.querySelector('title')?.textContent?.trim() || 'UNTITLED';
@@ -266,8 +256,6 @@ async function syncFromRSS() {
       const itunesEp = item.getElementsByTagNameNS('http://www.itunes.com/dtds/podcast-1.0.dtd', 'episode')[0]
                     || item.querySelector('episode');
       const episodeNum = itunesEp ? parseInt(itunesEp.textContent.trim(), 10) : (totalItems - i);
-
-      console.log(`[FragCast RSS] item ${i}: ep ${episodeNum} — "${title}" (itunes tag: ${itunesEp ? itunesEp.textContent.trim() : 'none'})`);
 
       if (existingNums.has(episodeNum) || existingTitles.has(title.toLowerCase().trim())) continue;
 
