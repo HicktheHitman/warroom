@@ -40,16 +40,10 @@ async function loadTierListPage() {
     </div>`;
 
   const profile = getCachedProfile();
-  const [weaponsRes, myRes] = await Promise.all([
-    xhrGet('weapons', 'select=*&order=category.asc,name.asc'),
-    profile
-      ? xhrGet('weapon_tier_lists', `select=weapon_id,tier&user_id=eq.${profile.id}`)
-      : Promise.resolve({ data: [] })
-  ]);
+  const weaponsRes = await xhrGet('weapons', 'select=*&order=category.asc,name.asc');
 
   _tlWeapons   = weaponsRes.data || [];
   _tlTierState = {};
-  (myRes.data || []).forEach(r => { _tlTierState[r.weapon_id] = r.tier; });
 
   renderTierBuilder();
 }
@@ -130,7 +124,13 @@ function renderTierBuilder() {
       <span id="tl-status" style="font-family:var(--font-mono);font-size:9px;
             color:var(--olive-glow);letter-spacing:1px;"></span>
       ${profile
-        ? `<button onclick="clearTierList()"
+        ? `<button onclick="loadSavedTierList()"
+                   style="font-family:var(--font-mono);font-size:9px;padding:8px 16px;
+                          cursor:pointer;border:1px solid var(--navy-border);letter-spacing:1px;
+                          background:transparent;color:var(--bone-dim);">
+             LOAD SAVED
+           </button>
+           <button onclick="clearTierList()"
                    style="font-family:var(--font-mono);font-size:9px;padding:8px 16px;
                           cursor:pointer;border:1px solid var(--navy-border);letter-spacing:1px;
                           background:transparent;color:var(--bone-dim);">
@@ -214,6 +214,22 @@ async function saveTierList() {
     setTimeout(() => { if (statusEl) statusEl.textContent = ''; }, 2500);
   }
   showToast('TIER LIST LOCKED IN', 'success');
+}
+
+async function loadSavedTierList() {
+  const profile = getCachedProfile();
+  if (!profile) return;
+
+  const { data } = await xhrGet('weapon_tier_lists', `select=weapon_id,tier&user_id=eq.${profile.id}`);
+  if (!data || !data.length) {
+    showToast('NO SAVED LIST FOUND', 'default');
+    return;
+  }
+
+  _tlTierState = {};
+  data.forEach(r => { _tlTierState[r.weapon_id] = r.tier; });
+  renderTierBuilder();
+  showToast('SAVED LIST LOADED', 'success');
 }
 
 function clearTierList() {
