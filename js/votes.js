@@ -8,14 +8,102 @@
 // ── Weapon category icons (SVG silhouettes) ───────────────
 
 const WEAPON_ICONS = {
-  'AR':      `<svg width="32" height="16" viewBox="0 0 32 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="22" height="4" rx="1" fill="currentColor"/><rect x="23" y="5" width="8" height="2" rx="0.5" fill="currentColor"/><rect x="5" y="4" width="3" height="2" fill="currentColor"/><rect x="8" y="10" width="4" height="3" rx="0.5" fill="currentColor"/><rect x="1" y="6" width="4" height="4" rx="0.5" fill="currentColor" opacity="0.6"/></svg>`,
-  'SMG':     `<svg width="28" height="16" viewBox="0 0 28 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="18" height="4" rx="1" fill="currentColor"/><rect x="19" y="6" width="7" height="2" rx="0.5" fill="currentColor"/><rect x="7" y="10" width="3" height="3" rx="0.5" fill="currentColor"/><rect x="4" y="4" width="2" height="2" fill="currentColor"/></svg>`,
-  'LMG':     `<svg width="36" height="16" viewBox="0 0 36 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="26" height="4" rx="1" fill="currentColor"/><rect x="27" y="5" width="8" height="2" rx="0.5" fill="currentColor"/><rect x="4" y="10" width="5" height="4" rx="0.5" fill="currentColor"/><circle cx="8" cy="10" r="2" fill="currentColor" opacity="0.5"/><rect x="6" y="3" width="2" height="3" fill="currentColor"/></svg>`,
-  'Sniper':  `<svg width="40" height="12" viewBox="0 0 40 12" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="5" width="32" height="3" rx="0.5" fill="currentColor"/><rect x="33" y="5" width="6" height="1.5" rx="0.5" fill="currentColor"/><rect x="10" y="2" width="2" height="8" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="6" y="8" width="4" height="3" rx="0.5" fill="currentColor"/></svg>`,
-  'Shotgun': `<svg width="30" height="16" viewBox="0 0 30 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="20" height="4" rx="1" fill="currentColor"/><rect x="21" y="6" width="8" height="3" rx="0.5" fill="currentColor"/><rect x="21" y="5" width="8" height="1" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="6" y="10" width="5" height="4" rx="0.5" fill="currentColor"/></svg>`,
-  'Pistol':  `<svg width="22" height="18" viewBox="0 0 22 18" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="6" width="14" height="5" rx="1" fill="currentColor"/><rect x="15" y="7" width="6" height="2" rx="0.5" fill="currentColor"/><rect x="3" y="11" width="5" height="6" rx="1" fill="currentColor"/><rect x="5" y="4" width="2" height="2" fill="currentColor"/></svg>`,
-  'Launcher':`<svg width="34" height="14" viewBox="0 0 34 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="5" width="24" height="5" rx="2" fill="currentColor"/><circle cx="28" cy="7" r="5" fill="currentColor" opacity="0.3"/><circle cx="28" cy="7" r="3" fill="currentColor" opacity="0.5"/><rect x="8" y="10" width="6" height="3" rx="0.5" fill="currentColor"/></svg>`,
-  'Melee':   `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="11" y="2" width="3" height="14" rx="1" fill="currentColor"/><rect x="10" y="1" width="5" height="3" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="10" y="16" width="5" height="7" rx="1" fill="currentColor" opacity="0.5"/></svg>`
+  // Modern AR — pistol grip, angled mag, muzzle device, rail, collapsible stock
+  'AR': `<svg width="46" height="20" viewBox="0 0 46 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="8" width="2" height="4" rx="0.4" fill="currentColor"/>
+    <rect x="1" y="9" width="13" height="2" rx="0.3" fill="currentColor"/>
+    <rect x="3" y="7" width="12" height="6" rx="1" fill="currentColor" opacity="0.75"/>
+    <rect x="14" y="6" width="14" height="5" rx="0.5" fill="currentColor"/>
+    <rect x="14" y="5" width="14" height="1.5" rx="0.3" fill="currentColor" opacity="0.45"/>
+    <rect x="14" y="11" width="10" height="3" rx="0.5" fill="currentColor" opacity="0.88"/>
+    <polygon points="23,14 26,14 25,20 22,20" fill="currentColor"/>
+    <polygon points="16,14 21,14 20,20 15,20" fill="currentColor" opacity="0.82"/>
+    <rect x="28" y="8" width="8" height="3" rx="0.5" fill="currentColor"/>
+    <rect x="34" y="7" width="7" height="5" rx="0.5" fill="currentColor" opacity="0.65"/>
+  </svg>`,
+  // Modern SMG — compact body, short barrel, pistol grip, small mag, folding stock
+  'SMG': `<svg width="34" height="20" viewBox="0 0 34 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="8" width="2" height="4" rx="0.4" fill="currentColor"/>
+    <rect x="1" y="9" width="9" height="2" rx="0.3" fill="currentColor"/>
+    <rect x="3" y="7" width="8" height="6" rx="1" fill="currentColor" opacity="0.75"/>
+    <rect x="10" y="6" width="13" height="7" rx="1" fill="currentColor"/>
+    <rect x="10" y="5" width="13" height="1.5" rx="0.3" fill="currentColor" opacity="0.45"/>
+    <polygon points="20,13 23,13 22,20 19,20" fill="currentColor"/>
+    <polygon points="13,13 18,13 17,20 12,20" fill="currentColor" opacity="0.82"/>
+    <rect x="23" y="8" width="7" height="3" rx="0.5" fill="currentColor"/>
+    <rect x="28" y="7" width="5" height="5" rx="0.5" fill="currentColor" opacity="0.6"/>
+  </svg>`,
+  // Modern LMG — long barrel, bipod, heavy receiver, large box mag, pistol grip
+  'LMG': `<svg width="52" height="22" viewBox="0 0 52 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="9" width="2" height="4" rx="0.4" fill="currentColor"/>
+    <rect x="1" y="10" width="18" height="2" rx="0.3" fill="currentColor"/>
+    <rect x="2" y="11" width="1.5" height="6" rx="0.5" fill="currentColor" opacity="0.62"/>
+    <rect x="7" y="11" width="1.5" height="6" rx="0.5" fill="currentColor" opacity="0.62"/>
+    <rect x="4" y="7" width="14" height="7" rx="1" fill="currentColor" opacity="0.75"/>
+    <rect x="17" y="6" width="16" height="5" rx="0.5" fill="currentColor"/>
+    <rect x="17" y="5" width="16" height="1.5" rx="0.3" fill="currentColor" opacity="0.45"/>
+    <rect x="17" y="11" width="12" height="3" rx="0.5" fill="currentColor" opacity="0.88"/>
+    <rect x="19" y="14" width="9" height="7" rx="0.5" fill="currentColor" opacity="0.8"/>
+    <polygon points="28,14 31,14 30,21 27,21" fill="currentColor"/>
+    <rect x="33" y="7" width="11" height="4" rx="0.5" fill="currentColor"/>
+    <rect x="40" y="6" width="7" height="6" rx="0.5" fill="currentColor" opacity="0.62"/>
+  </svg>`,
+  // Modern Sniper — long barrel, scope, bipod, adjustable stock, pistol grip
+  'Sniper': `<svg width="52" height="18" viewBox="0 0 52 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="8" width="2" height="3" rx="0.4" fill="currentColor"/>
+    <rect x="1" y="8.5" width="20" height="2" rx="0.3" fill="currentColor"/>
+    <rect x="3" y="10" width="1.5" height="5" rx="0.5" fill="currentColor" opacity="0.62"/>
+    <rect x="8" y="10" width="1.5" height="5" rx="0.5" fill="currentColor" opacity="0.62"/>
+    <rect x="19" y="7" width="16" height="5" rx="0.5" fill="currentColor"/>
+    <rect x="22" y="3" width="11" height="4" rx="1" fill="currentColor" opacity="0.85"/>
+    <rect x="22" y="3.5" width="2.5" height="3" rx="0.4" fill="currentColor" opacity="0.4"/>
+    <rect x="30.5" y="3.5" width="2.5" height="3" rx="0.4" fill="currentColor" opacity="0.4"/>
+    <polygon points="31,12 33,12 32,17 30,17" fill="currentColor"/>
+    <rect x="24" y="12" width="4" height="5" rx="0.5" fill="currentColor" opacity="0.8"/>
+    <rect x="35" y="8" width="10" height="3" rx="0.5" fill="currentColor"/>
+    <rect x="43" y="7" width="8" height="5" rx="0.5" fill="currentColor" opacity="0.62"/>
+  </svg>`,
+  // Modern Shotgun — double barrel profile, pump foregrip, pistol grip, stock
+  'Shotgun': `<svg width="40" height="20" viewBox="0 0 40 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="7" width="2" height="6" rx="0.4" fill="currentColor"/>
+    <rect x="1" y="8" width="14" height="2" rx="0.3" fill="currentColor"/>
+    <rect x="1" y="10" width="14" height="2" rx="0.3" fill="currentColor" opacity="0.65"/>
+    <rect x="6" y="6" width="6" height="8" rx="1" fill="currentColor" opacity="0.75"/>
+    <rect x="11" y="6" width="14" height="8" rx="1" fill="currentColor"/>
+    <polygon points="21,14 24,14 23,20 20,20" fill="currentColor"/>
+    <rect x="25" y="7" width="9" height="4" rx="0.5" fill="currentColor"/>
+    <rect x="31" y="6" width="8" height="6" rx="0.5" fill="currentColor" opacity="0.62"/>
+  </svg>`,
+  // Modern Pistol — squared slide, ejection port, frame, angled grip, mag base
+  'Pistol': `<svg width="26" height="24" viewBox="0 0 26 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="1" y="8" width="11" height="2.5" rx="0.4" fill="currentColor"/>
+    <rect x="4" y="5" width="17" height="6" rx="1" fill="currentColor"/>
+    <rect x="15" y="6.5" width="4" height="3" rx="0.3" fill="currentColor" opacity="0.28"/>
+    <rect x="10" y="11" width="10" height="3" rx="0.5" fill="currentColor" opacity="0.9"/>
+    <rect x="10" y="14" width="4" height="2" rx="1" fill="currentColor" opacity="0.38"/>
+    <rect x="14" y="13" width="7" height="9" rx="1" fill="currentColor"/>
+    <rect x="14" y="22" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.62"/>
+  </svg>`,
+  // Modern Launcher — shoulder-fired tube, grip, sight, back blast cone
+  'Launcher': `<svg width="42" height="18" viewBox="0 0 42 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="0,7 0,11 4,9" fill="currentColor" opacity="0.65"/>
+    <rect x="3" y="6" width="27" height="6" rx="2" fill="currentColor"/>
+    <polygon points="30,6 30,12 40,9" fill="currentColor" opacity="0.42"/>
+    <rect x="40" y="7" width="2" height="4" rx="0.5" fill="currentColor" opacity="0.28"/>
+    <rect x="19" y="12" width="5" height="5" rx="0.5" fill="currentColor" opacity="0.85"/>
+    <rect x="16" y="12" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.48"/>
+    <rect x="9" y="4" width="7" height="2" rx="0.5" fill="currentColor" opacity="0.55"/>
+  </svg>`,
+  // Modern Melee — tactical tanto knife, guard, wrapped handle, pommel
+  'Melee': `<svg width="20" height="26" viewBox="0 0 20 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="9,1 13,1 13,12 16,15 9,15" fill="currentColor"/>
+    <polygon points="13,9 16,15 13,15" fill="currentColor" opacity="0.62"/>
+    <rect x="7" y="15" width="9" height="2" rx="0.5" fill="currentColor"/>
+    <rect x="8" y="17" width="7" height="8" rx="1" fill="currentColor" opacity="0.88"/>
+    <rect x="8" y="19" width="7" height="1" rx="0.3" fill="currentColor" opacity="0.38"/>
+    <rect x="8" y="22" width="7" height="1" rx="0.3" fill="currentColor" opacity="0.38"/>
+    <rect x="8" y="25" width="7" height="1" rx="0.5" fill="currentColor" opacity="0.62"/>
+  </svg>`
 };
 
 async function loadWeaponsPage() {
