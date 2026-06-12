@@ -507,6 +507,10 @@
 
   // ── LOAD POSTED INTEL ───────────────────────────────────
 
+  const ADMIN_INTEL_PAGE_SIZE = 4;
+  let _adminIntelPosts = [];
+  let _adminIntelPage  = 0;
+
   async function loadPostedIntel() {
     const container = document.getElementById('posted-intel-list');
     container.innerHTML = '<div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>';
@@ -520,7 +524,25 @@
       return;
     }
 
-    container.innerHTML = data.map(p => {
+    _adminIntelPosts = data;
+    _adminIntelPage  = 0;
+    renderAdminIntelPage();
+  }
+
+  function setAdminIntelPage(n) {
+    _adminIntelPage = n;
+    renderAdminIntelPage();
+  }
+
+  function renderAdminIntelPage() {
+    const container  = document.getElementById('posted-intel-list');
+    const totalPages = Math.ceil(_adminIntelPosts.length / ADMIN_INTEL_PAGE_SIZE);
+    const page       = _adminIntelPosts.slice(
+      _adminIntelPage * ADMIN_INTEL_PAGE_SIZE,
+      (_adminIntelPage + 1) * ADMIN_INTEL_PAGE_SIZE
+    );
+
+    const items = page.map(p => {
       const date = new Date(p.created_at).toLocaleDateString('en-US', {
         year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
       });
@@ -553,6 +575,32 @@
           </div>
         </div>`;
     }).join('');
+
+    const pagination = totalPages > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding-top:8px;margin-top:4px;">
+        <button onclick="setAdminIntelPage(${_adminIntelPage - 1})"
+                ${_adminIntelPage === 0 ? 'disabled' : ''}
+                style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+                       padding:4px 10px;cursor:pointer;border:1px solid var(--navy-border);
+                       background:transparent;
+                       color:${_adminIntelPage === 0 ? 'var(--navy-border)' : 'var(--bone-dim)'};">
+          ◀ PREV
+        </button>
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);letter-spacing:1px;">
+          ${_adminIntelPage + 1} / ${totalPages} — ${_adminIntelPosts.length} TOTAL
+        </span>
+        <button onclick="setAdminIntelPage(${_adminIntelPage + 1})"
+                ${_adminIntelPage >= totalPages - 1 ? 'disabled' : ''}
+                style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+                       padding:4px 10px;cursor:pointer;border:1px solid var(--navy-border);
+                       background:transparent;
+                       color:${_adminIntelPage >= totalPages - 1 ? 'var(--navy-border)' : 'var(--bone-dim)'};">
+          NEXT ▶
+        </button>
+      </div>` : '';
+
+    container.innerHTML = items + pagination;
   }
 
   // ── EDIT INTEL ──────────────────────────────────────────
@@ -762,6 +810,10 @@
     showToast('PATCH NOTE POSTED', 'success');
   }
 
+  const ADMIN_PATCH_PAGE_SIZE = 4;
+  let _adminPatchNotes = [];
+  let _adminPatchPage  = 0;
+
   async function loadPostedPatchNotes() {
     const container = document.getElementById('posted-patch-list');
     container.innerHTML = '<div style="text-align:center;padding:1rem;"><span class="spinner"></span></div>';
@@ -775,7 +827,25 @@
       return;
     }
 
-    container.innerHTML = data.map(p => {
+    _adminPatchNotes = data;
+    _adminPatchPage  = 0;
+    renderAdminPatchPage();
+  }
+
+  function setAdminPatchPage(n) {
+    _adminPatchPage = n;
+    renderAdminPatchPage();
+  }
+
+  function renderAdminPatchPage() {
+    const container  = document.getElementById('posted-patch-list');
+    const totalPages = Math.ceil(_adminPatchNotes.length / ADMIN_PATCH_PAGE_SIZE);
+    const page       = _adminPatchNotes.slice(
+      _adminPatchPage * ADMIN_PATCH_PAGE_SIZE,
+      (_adminPatchPage + 1) * ADMIN_PATCH_PAGE_SIZE
+    );
+
+    const items = page.map(p => {
       const cats = Array.isArray(p.categories) ? p.categories
                  : (p.categories ? JSON.parse(p.categories) : []);
       const patchDate = p.patch_date
@@ -805,6 +875,32 @@
           </button>
         </div>`;
     }).join('');
+
+    const pagination = totalPages > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;
+                  padding-top:8px;margin-top:4px;">
+        <button onclick="setAdminPatchPage(${_adminPatchPage - 1})"
+                ${_adminPatchPage === 0 ? 'disabled' : ''}
+                style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+                       padding:4px 10px;cursor:pointer;border:1px solid var(--navy-border);
+                       background:transparent;
+                       color:${_adminPatchPage === 0 ? 'var(--navy-border)' : 'var(--bone-dim)'};">
+          ◀ PREV
+        </button>
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);letter-spacing:1px;">
+          ${_adminPatchPage + 1} / ${totalPages} — ${_adminPatchNotes.length} TOTAL
+        </span>
+        <button onclick="setAdminPatchPage(${_adminPatchPage + 1})"
+                ${_adminPatchPage >= totalPages - 1 ? 'disabled' : ''}
+                style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+                       padding:4px 10px;cursor:pointer;border:1px solid var(--navy-border);
+                       background:transparent;
+                       color:${_adminPatchPage >= totalPages - 1 ? 'var(--navy-border)' : 'var(--bone-dim)'};">
+          NEXT ▶
+        </button>
+      </div>` : '';
+
+    container.innerHTML = items + pagination;
   }
 
   async function deletePatchNote(id, version) {
