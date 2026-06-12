@@ -216,10 +216,26 @@ function renderUrgentAlerts(posts) {
 
 // ── Confirmed Intel Board ─────────────────────────────────
 
+const INTEL_PAGE_SIZE = 8;
+let _intelPosts = [];
+let _intelPage  = 0;
+
 function renderConfirmedIntel(posts) {
+  _intelPosts = posts;
+  _intelPage  = 0;
+  renderIntelPage();
+}
+
+function setIntelPage(n) {
+  _intelPage = n;
+  renderIntelPage();
+  document.getElementById('confirmed-intel-wrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderIntelPage() {
   const container = document.getElementById('confirmed-intel-wrap');
 
-  if (!posts.length) {
+  if (!_intelPosts.length) {
     container.innerHTML = `
       <div class="card card-top">
         <div class="card-header">
@@ -234,7 +250,10 @@ function renderConfirmedIntel(posts) {
     return;
   }
 
-  const items = posts.map(p => {
+  const totalPages = Math.ceil(_intelPosts.length / INTEL_PAGE_SIZE);
+  const page       = _intelPosts.slice(_intelPage * INTEL_PAGE_SIZE, (_intelPage + 1) * INTEL_PAGE_SIZE);
+
+  const items = page.map(p => {
     const date = new Date(p.created_at).toLocaleDateString('en-US', {
       year: 'numeric', month: 'short', day: 'numeric'
     });
@@ -263,13 +282,46 @@ function renderConfirmedIntel(posts) {
       </div>`;
   }).join('');
 
+  const pagination = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding-top:10px;border-top:1px solid var(--navy-border);margin-top:4px;">
+      <button onclick="setIntelPage(${_intelPage - 1})"
+              ${_intelPage === 0 ? 'disabled' : ''}
+              style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+                     padding:5px 12px;cursor:pointer;border:1px solid var(--navy-border);
+                     background:transparent;color:${_intelPage === 0 ? 'var(--navy-border)' : 'var(--bone-dim)'};
+                     transition:all 0.15s;"
+              ${_intelPage > 0 ? 'onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'"' : ''}
+              ${_intelPage > 0 ? 'onmouseout="this.style.borderColor=\'var(--navy-border)\';this.style.color=\'var(--bone-dim)\'"' : ''}>
+        ◀ PREV
+      </button>
+      <span style="font-family:var(--font-mono);font-size:9px;color:var(--bone-dim);letter-spacing:1px;">
+        ${_intelPage + 1} / ${totalPages}
+      </span>
+      <button onclick="setIntelPage(${_intelPage + 1})"
+              ${_intelPage >= totalPages - 1 ? 'disabled' : ''}
+              style="font-family:var(--font-mono);font-size:9px;letter-spacing:1px;
+                     padding:5px 12px;cursor:pointer;border:1px solid var(--navy-border);
+                     background:transparent;color:${_intelPage >= totalPages - 1 ? 'var(--navy-border)' : 'var(--bone-dim)'};
+                     transition:all 0.15s;"
+              ${_intelPage < totalPages - 1 ? 'onmouseover="this.style.borderColor=\'var(--gold)\';this.style.color=\'var(--gold)\'"' : ''}
+              ${_intelPage < totalPages - 1 ? 'onmouseout="this.style.borderColor=\'var(--navy-border)\';this.style.color=\'var(--bone-dim)\'"' : ''}>
+        NEXT ▶
+      </button>
+    </div>` : '';
+
   container.innerHTML = `
     <div class="card card-top">
       <div class="card-header">
         <div class="card-title">CONFIRMED INTEL</div>
-        <div class="dot dot-gold"></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          ${totalPages > 1 ? `<span style="font-family:var(--font-mono);font-size:9px;
+            color:var(--bone-dim);letter-spacing:1px;">${_intelPosts.length} TOTAL</span>` : ''}
+          <div class="dot dot-gold"></div>
+        </div>
       </div>
       ${items}
+      ${pagination}
     </div>`;
 }
 

@@ -321,3 +321,89 @@
   border-color: var(--navy-border);
   background: transparent;
 }
+
+/* ══════════════════════════════════════════
+   MOBILE — ≤ 640px
+══════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+
+  /* ─ Topbar: two-row layout ─────────────
+     Row 1: logo (left) + actions (right)
+     Row 2: nav tabs, full-width scrollable  */
+  .topbar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 6px 10px 0;
+    gap: 0;
+  }
+
+  .topbar-logo {
+    padding-bottom: 6px;
+  }
+
+  .topbar-right {
+    margin-left: auto;
+    gap: 4px;
+    padding-bottom: 6px;
+  }
+
+  .callsign-badge {
+    max-width: 90px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .topbar-nav {
+    flex-basis: 100%;
+    width: 100%;
+    border-top: 1px solid var(--navy-border);
+    padding: 2px 0;
+    scrollbar-width: none;
+  }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+
+  /* Larger touch targets on nav tabs */
+  .nav-tab {
+    padding: 10px 10px;
+  }
+
+  /* ─ App main ─ */
+  .app-main {
+    padding: 0.75rem;
+  }
+
+  /* ─ Deployment banner ─ */
+  .deployment-banner {
+    padding: 0.75rem 1rem;
+  }
+
+  /* ─ Countdown blocks ─ */
+  .cd-num   { font-size: 18px; }
+  .cd-block { min-width: 44px; padding: 4px 6px; }
+
+  /* ─ Phase badges ─ */
+  .phase-badge {
+    font-size: 7px;
+    padding: 2px 7px;
+  }
+
+  /* ─ Toasts: span full width, no overflow ─ */
+  #toast-container {
+    left: 10px;
+    right: 10px;
+    bottom: 16px;
+  }
+  .toast {
+    min-width: 0;
+  }
+
+  /* ─ Modal actions: wrap on small screens ─ */
+  .modal-actions {
+    flex-wrap: wrap;
+  }
+  .modal-actions .btn {
+    flex: 1;
+  }
+}
